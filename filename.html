@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My ROS Dashboard</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
+</head>
+<body>
+    <h1>ROS Web Dashboard</h1>
+    <div id="robot_position"></div>
+    
+    <script type="text/javascript">
+        // Connect to the rosbridge WebSocket server
+        var ros = new ROSLIB.Ros({
+            url: 'ws://<your-cloud-vm-ip>:9090'  // Replace with your cloud VM's public IP
+        });
+        
+        // Subscribe to the robot's pose topic
+        var poseListener = new ROSLIB.Topic({
+            ros: ros,
+            name: '/robot_pose',
+            messageType: 'geometry_msgs/Pose'
+        });
+        
+        // Display the position in the div
+        poseListener.subscribe(function(message) {
+            document.getElementById('robot_position').innerHTML = `
+                Position: x=${message.position.x}, y=${message.position.y}, z=${message.position.z}
+            `;
+        });
+    </script>
+</body>
+</html>
