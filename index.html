@@ -8,22 +8,25 @@
 </head>
 <body>
     <h1>ROS Web Dashboard</h1>
-    <div id="robot_position"></div>
+    
+    <!-- Robot position -->
+    <div id="robot_position" style="margin-bottom:20px;"></div>
 
     <!-- Gazebo camera stream -->
     <iframe src="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
             width="640" height="480" style="border:1px solid #000;">
     </iframe>
 
-
-
-
-
+    <!-- Velocity box -->
+    <div id="cmdvel-box"
+         style="width:640px;height:50px;border:1px solid #000;margin-top:20px;padding:10px;">
+        Waiting for /cmd_vel messages...
+    </div>
 
     <script type="text/javascript">
         // Connect to the rosbridge WebSocket server
         var ros = new ROSLIB.Ros({
-            url: 'ws://<your-cloud-vm-ip>:9090'  // Replace with your cloud VM's public IP
+            url: 'ws://localhost:9090'  // Use localhost if rosbridge runs on the same machine
         });
         
         // Subscribe to the robot's pose topic
@@ -33,13 +36,27 @@
             messageType: 'geometry_msgs/Pose'
         });
         
-        // Display the position in the div
         poseListener.subscribe(function(message) {
-            document.getElementById('robot_position').innerHTML = `
-                Position: x=${message.position.x}, y=${message.position.y}, z=${message.position.z}
-            `;
+            document.getElementById('robot_position').innerHTML =
+                `Position: x=${message.position.x.toFixed(2)}, y=${message.position.y.toFixed(2)}, z=${message.position.z.toFixed(2)}`;
+        });
+
+        // Subscribe to the cmd_vel topic
+        var cmdVelListener = new ROSLIB.Topic({
+            ros: ros,
+            name: '/cmd_vel',
+            messageType: 'geometry_msgs/Twist'
+        });
+
+        cmdVelListener.subscribe(function(message) {
+            document.getElementById("cmdvel-box").innerText =
+                "Linear X: " + message.linear.x.toFixed(2) +
+                " | Linear Y: " + message.linear.y.toFixed(2) +
+                " | Linear Z: " + message.linear.z.toFixed(2) +
+                " | Angular X: " + message.angular.x.toFixed(2) +
+                " | Angular Y: " + message.angular.y.toFixed(2) +
+                " | Angular Z: " + message.angular.z.toFixed(2);
         });
     </script>
 </body>
 </html>
-
