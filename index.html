@@ -20,13 +20,13 @@
     <!-- Velocity box -->
     <div id="cmdvel-box"
          style="width:640px;height:50px;border:1px solid #000;margin-top:20px;padding:10px;">
-        Waiting for /cmd_vel messages...
+        Waiting for /waffle_pi/cmd_vel messages...
     </div>
 
     <script type="text/javascript">
         // Connect to the rosbridge WebSocket server
         var ros = new ROSLIB.Ros({
-            url: 'ws://localhost:9090'  // Use localhost if rosbridge runs on the same machine
+            url: 'ws://localhost:9090'  // assuming rosbridge runs locally
         });
         
         // Subscribe to the robot's pose topic
@@ -41,10 +41,10 @@
                 `Position: x=${message.position.x.toFixed(2)}, y=${message.position.y.toFixed(2)}, z=${message.position.z.toFixed(2)}`;
         });
 
-        // Subscribe to the cmd_vel topic
+        // Subscribe to the waffle_pi cmd_vel topic
         var cmdVelListener = new ROSLIB.Topic({
             ros: ros,
-            name: '/cmd_vel',
+            name: '/waffle_pi/cmd_vel',
             messageType: 'geometry_msgs/Twist'
         });
 
