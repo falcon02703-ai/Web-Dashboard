@@ -1,63 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My ROS Dashboard</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
+  <meta charset="UTF-8">
+  <title>TurtleBot Web Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/eventemitter2/lib/eventemitter2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/easeljs/lib/easeljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ros2d/build/ros2d.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
 </head>
 <body>
-    <h1>ROS Web Dashboard</h1>
-    
-    <!-- Robot position -->
-    <div id="robot_position" style="margin-bottom:20px;"></div>
+  <h1>TurtleBot Web Dashboard</h1>
 
-    <!-- Gazebo camera stream -->
-    <iframe src="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
-            width="640" height="480" style="border:1px solid #000;">
-    </iframe>
+  <!-- Camera -->
+  <h2>RGB Camera (Waffle Pi)</h2>
+  <iframe src="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
+          width="640" height="480" style="border:1px solid #000;"></iframe>
 
-    <!-- Waffle Pi velocity section -->
-    <h2 style="margin-top:20px;">Velocity Data (from Waffle Pi)</h2>
-    <div id="cmdvel-box"
-         style="width:640px;height:50px;border:1px solid #000;margin-top:10px;padding:10px;">
-        Waiting for /waffle_pi/cmd_vel messages...
-    </div>
+  <!-- Velocity -->
+  <h2>Velocity Data (from Waffle Pi)</h2>
+  <div id="cmdvel-box"
+       style="width:640px;height:50px;border:1px solid #000;margin-top:10px;padding:10px;">
+    Waiting for /waffle_pi/cmd_vel messages...
+  </div>
 
-    <script type="text/javascript">
-        // Connect to the rosbridge WebSocket server
-        var ros = new ROSLIB.Ros({
-            url: 'ws://localhost:9090'  // assuming rosbridge runs locally
-        });
-        
-        // Subscribe to the robot's pose topic
-        var poseListener = new ROSLIB.Topic({
-            ros: ros,
-            name: '/robot_pose',
-            messageType: 'geometry_msgs/Pose'
-        });
-        
-        poseListener.subscribe(function(message) {
-            document.getElementById('robot_position').innerHTML =
-                `Position: x=${message.position.x.toFixed(2)}, y=${message.position.y.toFixed(2)}, z=${message.position.z.toFixed(2)}`;
-        });
+  <!-- Teleop buttons -->
+  <h2>Teleop Control</h2>
+  <div>
+    <button id="upButton">Up</button>
+    <button id="downButton">Down</button>
+    <button id="leftButton">Left</button>
+    <button id="rightButton">Right</button>
+  </div>
 
-        // Subscribe to the waffle_pi cmd_vel topic
-        var cmdVelListener = new ROSLIB.Topic({
-            ros: ros,
-            name: '/waffle_pi/cmd_vel',
-            messageType: 'geometry_msgs/Twist'
-        });
+  <!-- Map -->
+  <h2>Map Visualization</h2>
+  <div id="nav2dmap" style="width:500px;height:500px;border:1px solid #000;"></div>
 
-        cmdVelListener.subscribe(function(message) {
-            document.getElementById("cmdvel-box").innerText =
-                "Linear X: " + message.linear.x.toFixed(2) +
-                " | Linear Y: " + message.linear.y.toFixed(2) +
-                " | Linear Z: " + message.linear.z.toFixed(2) +
-                " | Angular X: " + message.angular.x.toFixed(2) +
-                " | Angular Y: " + message.angular.y.toFixed(2) +
-                " | Angular Z: " + message.angular.z.toFixed(2);
-        });
-    </script>
+  <!-- Odometry -->
+  <h2>Odometry</h2>
+  <div id="poseX"></div>
+  <div id="poseY"></div>
+  <div id="poseTheta"></div>
+  <div id="poseLinVel"></div>
+  <div id="poseAngVel"></div>
+
+  <script>
+    // Connect to rosbridge
+    var ros = new ROSLIB.Ros({ url: 'ws://localhost:9090' });
+
+    // Velocity listener
+    var cmdVelListener = new ROSLIB.Topic({
+      ros: ros,
+      name: '/waffle_pi/cmd_vel',
+      messageType: 'geometry_msgs/Twist'
+    });
+    cmdVelListener.subscribe(function(msg) {
+      document.getElementById("cmdvel-box").innerText =
+        "Linear X: " + msg.linear.x.toFixed(2) +
+        " | Angular Z: " + msg.angular.z.toFixed(2);
+    });
+
+    // Teleop publisher
+    var cmdVelTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: '/waffle_pi/cmd_vel',
+      messageType: 'geometry_msgs/Twist'
+    });
+    var twist = new ROSLIB.Message({ linear:{x:0,y:0,z:0}, angular:{x:0,y:0,z:0} });
+
+    function startMoving(linVel, angVel) {
+      twist.linear.x = linVel;
+      twist.angular.z = angVel;
+      cmdVelTopic.publish(twist);
+    }
+    function stopMoving() {
+      twist.linear.x = 0;
+      twist.angular.z = 0;
+      cmdVelTopic.publish(twist);
+    }
+
+    document.getElementById('upButton').onmousedown = () => startMoving(0.2,0);
+    document.getElementById('upButton').onmouseup = stopMoving;
+    document.getElementById('downButton').onmousedown = () => startMoving(-0.2,0);
+    document.getElementById('downButton').onmouseup = stopMoving;
+    document.getElementById('leftButton').onmousedown = () => startMoving(0,0.5);
+    document.getElementById('leftButton').onmouseup = stopMoving;
+    document.getElementById('rightButton').onmousedown = () => startMoving(0,-0.5);
+    document.getElementById('rightButton').onmouseup = stopMoving;
+
+    // Map viewer
+    var viewer = new ROS2D.Viewer({ divID:'nav2dmap', width:500, height:500 });
+    var gridClient = new ROS2D.OccupancyGridClient({
+      ros: ros,
+      rootObject: viewer.scene,
+      continuous: true,
+      topic: '/map'
+    });
+
+    // Robot pose arrow
+    var robotArrow = new ROS2D.NavigationArrow({
+      size: 0.1, strokeSize: 0.01, strokeStyle: "#00FF00", pulse: false
+    });
+    viewer.scene.addChild(robotArrow);
+
+    var robotPoseTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: '/robot_pose',
+      messageType: 'geometry_msgs/Pose'
+    });
+    robotPoseTopic.subscribe(function(pose) {
+      robotArrow.x = pose.position.x;
+      robotArrow.y = -pose.position.y;
+      var q = new THREE.Quaternion(
+        pose.orientation.x, pose.orientation.y,
+        pose.orientation.z, pose.orientation.w
+      );
+      var euler = new THREE.Euler().setFromQuaternion(q, 'ZYX');
+      robotArrow.rotation = euler.z * (180/Math.PI);
+    });
+
+    // Odometry listener
+    var odomTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: '/waffle_pi/odom',
+      messageType: 'nav_msgs/Odometry'
+    });
+    odomTopic.subscribe(function(msg) {
+      document.getElementById('poseX').innerText = "X = " + msg.pose.pose.position.x.toFixed(2);
+      document.getElementById('poseY').innerText = "Y = " + msg.pose.pose.position.y.toFixed(2);
+      document.getElementById('poseTheta').innerText = "Theta (w) = " + msg.pose.pose.orientation.w.toFixed(2);
+      document.getElementById('poseLinVel').innerText = "LinVel = " + msg.twist.twist.linear.x.toFixed(2);
+      document.getElementById('poseAngVel').innerText = "AngVel = " + msg.twist.twist.angular.z.toFixed(2);
+    });
+  </script>
 </body>
 </html>
