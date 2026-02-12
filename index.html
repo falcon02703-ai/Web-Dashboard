@@ -79,9 +79,13 @@
       if (intervalId) clearInterval(intervalId);
       intervalId = setInterval(() => {
         twist.linear.x = linVel;
+        twist.linear.y = 0;
+        twist.linear.z = 0;
+        twist.angular.x = 0;
+        twist.angular.y = 0;
         twist.angular.z = angVel;
         cmdVelTopic.publish(twist);
-      }, 100); // publish every 100 ms
+      }, 50); // publish every 50 ms
     }
     
     function stopMoving() {
@@ -90,6 +94,7 @@
       twist.angular.z = 0;
       cmdVelTopic.publish(twist);
     }
+
 
 
     document.getElementById('upButton').onmousedown = () => startMoving(0.2,0);
