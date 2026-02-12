@@ -56,9 +56,13 @@
       messageType: 'geometry_msgs/Twist'
     });
     cmdVelListener.subscribe(function(msg) {
-      document.getElementById("cmdvel-box").innerText =
-        "Linear X: " + msg.linear.x.toFixed(2) +
-        " | Angular Z: " + msg.angular.z.toFixed(2);
+        document.getElementById("cmdvel-box").innerText =
+          "Linear X: " + msg.linear.x.toFixed(2) +
+          " | Linear Y: " + msg.linear.y.toFixed(2) +
+          " | Linear Z: " + msg.linear.z.toFixed(2) +
+          " | Angular X: " + msg.angular.x.toFixed(2) +
+          " | Angular Y: " + msg.angular.y.toFixed(2) +
+          " | Angular Z: " + msg.angular.z.toFixed(2);
     });
 
     // Teleop publisher
@@ -68,17 +72,25 @@
       messageType: 'geometry_msgs/Twist'
     });
     var twist = new ROSLIB.Message({ linear:{x:0,y:0,z:0}, angular:{x:0,y:0,z:0} });
-
+   
+    let intervalId = null;
+    
     function startMoving(linVel, angVel) {
-      twist.linear.x = linVel;
-      twist.angular.z = angVel;
-      cmdVelTopic.publish(twist);
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        twist.linear.x = linVel;
+        twist.angular.z = angVel;
+        cmdVelTopic.publish(twist);
+      }, 100); // publish every 100 ms
     }
+    
     function stopMoving() {
+      if (intervalId) clearInterval(intervalId);
       twist.linear.x = 0;
       twist.angular.z = 0;
       cmdVelTopic.publish(twist);
     }
+
 
     document.getElementById('upButton').onmousedown = () => startMoving(0.2,0);
     document.getElementById('upButton').onmouseup = stopMoving;
