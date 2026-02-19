@@ -85,7 +85,7 @@
         twist.angular.y = 0;
         twist.angular.z = angVel;
         cmdVelTopic.publish(twist);
-      }, 50); // publish every 50 ms
+      }, 50);
     }
     
     function stopMoving() {
@@ -94,8 +94,6 @@
       twist.angular.z = 0;
       cmdVelTopic.publish(twist);
     }
-
-
 
     document.getElementById('upButton').onmousedown = () => startMoving(0.2,0);
     document.getElementById('upButton').onmouseup = stopMoving;
@@ -113,6 +111,11 @@
       rootObject: viewer.scene,
       continuous: true,
       topic: '/map'
+    });
+
+    gridClient.on('change', function() {
+      viewer.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
+      viewer.shift(gridClient.currentGrid.pose.position.x, gridClient.currentGrid.pose.position.y);
     });
 
     // Robot pose arrow
