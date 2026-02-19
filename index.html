@@ -116,6 +116,7 @@
     gridClient.on('change', function() {
       viewer.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
       viewer.shift(gridClient.currentGrid.pose.position.x, gridClient.currentGrid.pose.position.y);
+      viewer.scene.rotation = -90;
     });
 
     // Robot pose arrow
@@ -137,7 +138,7 @@
         pose.orientation.z, pose.orientation.w
       );
       var euler = new THREE.Euler().setFromQuaternion(q, 'ZYX');
-      robotArrow.rotation = euler.z * (180/Math.PI);
+      robotArrow.rotation = euler.z * (180/Math.PI) - 90;
     });
 
     // Odometry listener
