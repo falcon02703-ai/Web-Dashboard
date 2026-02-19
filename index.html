@@ -12,24 +12,30 @@
 <body>
   <h1>TurtleBot Web Dashboard</h1>
 
-  <!-- Camera and Map side by side -->
-  <div style="display:flex; gap:20px; align-items:flex-start;">
+  <!-- Camera, Map, and Velocity side by side -->
+  <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
     <div>
-      <h2>RGB Camera (Waffle Pi)</h2>
+      <h2>Camera (Waffle Pi)</h2>
       <iframe src="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
-              width="640" height="480" style="border:1px solid #000;"></iframe>
+              width="400" height="400" style="border:1px solid #000;"></iframe>
     </div>
     <div>
       <h2>Map Visualization</h2>
-      <div id="nav2dmap" style="width:500px;height:500px;border:1px solid #000;"></div>
+      <div id="nav2dmap" style="width:400px;height:400px;border:1px solid #000;"></div>
     </div>
-  </div>
-
-  <!-- Velocity -->
-  <h2>Velocity Data (from Waffle Pi)</h2>
-  <div id="cmdvel-box"
-       style="width:640px;height:50px;border:1px solid #000;margin-top:10px;padding:10px;">
-    Waiting for /waffle_pi/cmd_vel messages...
+    <div style="max-width:250px;">
+      <h2>Velocity Data</h2>
+      <div id="cmdvel-box"
+           style="border:1px solid #000;padding:10px;word-wrap:break-word;">
+        Waiting for /waffle_pi/cmd_vel messages...
+      </div>
+      <h2>Odometry</h2>
+      <div id="poseX"></div>
+      <div id="poseY"></div>
+      <div id="poseTheta"></div>
+      <div id="poseLinVel"></div>
+      <div id="poseAngVel"></div>
+    </div>
   </div>
 
   <!-- Teleop buttons -->
@@ -40,14 +46,6 @@
     <button id="leftButton">Left</button>
     <button id="rightButton">Right</button>
   </div>
-
-  <!-- Odometry -->
-  <h2>Odometry</h2>
-  <div id="poseX"></div>
-  <div id="poseY"></div>
-  <div id="poseTheta"></div>
-  <div id="poseLinVel"></div>
-  <div id="poseAngVel"></div>
 
   <script>
     // Connect to rosbridge
@@ -62,11 +60,11 @@
     cmdVelListener.subscribe(function(msg) {
         document.getElementById("cmdvel-box").innerText =
           "Linear X: " + msg.linear.x.toFixed(2) +
-          " | Linear Y: " + msg.linear.y.toFixed(2) +
-          " | Linear Z: " + msg.linear.z.toFixed(2) +
-          " | Angular X: " + msg.angular.x.toFixed(2) +
-          " | Angular Y: " + msg.angular.y.toFixed(2) +
-          " | Angular Z: " + msg.angular.z.toFixed(2);
+          "\nLinear Y: " + msg.linear.y.toFixed(2) +
+          "\nLinear Z: " + msg.linear.z.toFixed(2) +
+          "\nAngular X: " + msg.angular.x.toFixed(2) +
+          "\nAngular Y: " + msg.angular.y.toFixed(2) +
+          "\nAngular Z: " + msg.angular.z.toFixed(2);
     });
 
     // Teleop publisher
@@ -109,7 +107,7 @@
     document.getElementById('rightButton').onmouseup = stopMoving;
 
     // Map viewer
-    var viewer = new ROS2D.Viewer({ divID:'nav2dmap', width:500, height:500 });
+    var viewer = new ROS2D.Viewer({ divID:'nav2dmap', width:400, height:400 });
     var gridClient = new ROS2D.OccupancyGridClient({
       ros: ros,
       rootObject: viewer.scene,
