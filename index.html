@@ -12,10 +12,18 @@
 <body>
   <h1>TurtleBot Web Dashboard</h1>
 
-  <!-- Camera -->
-  <h2>RGB Camera (Waffle Pi)</h2>
-  <iframe src="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
-          width="640" height="480" style="border:1px solid #000;"></iframe>
+  <!-- Camera and Map side by side -->
+  <div style="display:flex; gap:20px; align-items:flex-start;">
+    <div>
+      <h2>RGB Camera (Waffle Pi)</h2>
+      <iframe src="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
+              width="640" height="480" style="border:1px solid #000;"></iframe>
+    </div>
+    <div>
+      <h2>Map Visualization</h2>
+      <div id="nav2dmap" style="width:500px;height:500px;border:1px solid #000;"></div>
+    </div>
+  </div>
 
   <!-- Velocity -->
   <h2>Velocity Data (from Waffle Pi)</h2>
@@ -32,10 +40,6 @@
     <button id="leftButton">Left</button>
     <button id="rightButton">Right</button>
   </div>
-
-  <!-- Map -->
-  <h2>Map Visualization</h2>
-  <div id="nav2dmap" style="width:500px;height:500px;border:1px solid #000;"></div>
 
   <!-- Odometry -->
   <h2>Odometry</h2>
