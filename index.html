@@ -144,7 +144,7 @@
     <div class="logo-icon"></div>
     <div>
       <h1>TurtleBot3</h1>
-      <span>WAFFLE PI — SLAM DASHBOARD · ROS1 NOETIC</span>
+      <span>WAFFLE PI — SLAM DASHBOARD · ROS2 HUMBLE</span>
     </div>
   </div>
   <div id="conn-status">
@@ -201,7 +201,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Odometry</span>
-        <span class="panel-badge">/waffle_pi/odom</span>
+        <span class="panel-badge">/odom</span>
       </div>
       <div class="odom-grid">
         <div class="odom-cell"><div class="odom-label">X (m)</div><div class="odom-value" id="odomX">--</div></div>
@@ -213,7 +213,7 @@
       <div class="gmapping-row">
         <div style="display:flex;align-items:center;gap:8px">
           <div class="map-status-dot" id="map-status-dot"></div>
-          <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)" id="map-status-text">GMAPPING — WAITING FOR ODOM</span>
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)" id="map-status-text">SLAM TOOLBOX — WAITING FOR ODOM</span>
         </div>
         <span class="panel-badge" id="odom-hz">-- Hz</span>
       </div>
@@ -223,7 +223,7 @@
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title">Teleop</span>
-        <span class="panel-badge">/waffle_pi/cmd_vel</span>
+        <span class="panel-badge">/cmd_vel</span>
       </div>
       <div class="teleop-grid" id="teleop-grid">
         <div></div>
@@ -277,7 +277,7 @@
           <button class="btn-sm primary" onclick="reconnectROS()">CONNECT</button>
         </div>
         <p style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">
-          Start bridge: <span style="color:var(--accent)">roslaunch rosbridge_server rosbridge_websocket.launch</span>
+          Start bridge: <span style="color:var(--accent)">ros2 launch rosbridge_server rosbridge_websocket_launch.xml</span>
         </p>
       </div>
     </div>
@@ -302,12 +302,12 @@
       <img id="cam-img" alt="Camera feed" src="" crossorigin="anonymous"
            onload="onCamLoad()" onerror="onCamError()">
       <div style="padding:6px 16px 2px;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px" id="cam-topic-label">
-        /waffle_pi/camera/rgb/image_raw
+        /camera/image_raw
       </div>
       <div class="cam-controls">
         <input class="cam-url-input" id="cam-url-input" type="text"
-          value="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw"
-          placeholder="http://localhost:8080/stream?topic=/waffle_pi/camera/rgb/image_raw">
+          value="http://localhost:8080/stream?topic=/camera/image_raw"
+          placeholder="http://localhost:8080/stream?topic=/camera/image_raw">
         <button class="btn-sm primary" onclick="applyCamera()">APPLY</button>
         <button class="btn-sm" onclick="stopCamera()">STOP</button>
       </div>
@@ -328,7 +328,7 @@
         <span class="panel-title">LiDAR Scan</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="cam-status-badge" id="laser-status-badge">WAITING</span>
-          <span class="panel-badge">/waffle_pi/scan</span>
+          <span class="panel-badge">/scan</span>
         </div>
       </div>
       <canvas id="laser-canvas" width="700" height="500"></canvas>
@@ -447,14 +447,14 @@ function initTopics() {
   // ── cmd_vel publisher ──
   cmdVelTopic = new ROSLIB.Topic({
     ros: ros,
-    name: '/waffle_pi/cmd_vel',
+    name: '/cmd_vel',
     messageType: 'geometry_msgs/Twist'
   });
 
   // ── Odometry subscriber ──
   var odomSub = new ROSLIB.Topic({
     ros: ros,
-    name: '/waffle_pi/odom',
+    name: '/odom',
     messageType: 'nav_msgs/Odometry',
     throttle_rate: 50,  // ~20 Hz cap, enough for display
     queue_length: 1
@@ -476,7 +476,7 @@ function initTopics() {
 
     document.getElementById('sb-odom').textContent = p.position.x.toFixed(2) + ', ' + p.position.y.toFixed(2);
     document.getElementById('sb-odom').style.color = 'var(--success)';
-    setMapStatus(true, 'MAPPING ACTIVE');
+    setMapStatus(true, 'SLAM TOOLBOX — MAPPING');
   });
 
   // Hz counter for odom
@@ -489,7 +489,7 @@ function initTopics() {
   // ── Laser scan subscriber ──
   var scanSub = new ROSLIB.Topic({
     ros: ros,
-    name: '/waffle_pi/scan',
+    name: '/scan',
     messageType: 'sensor_msgs/LaserScan',
     throttle_rate: 80,  // ~12 Hz for canvas
     queue_length: 1
@@ -825,7 +825,7 @@ buildRos('ws://localhost:9090');
   ctx.fillStyle = 'rgba(0,229,255,0.3)';
   ctx.font = '12px "Share Tech Mono", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('AWAITING /waffle_pi/scan', canvas.width/2, canvas.height/2);
+  ctx.fillText('AWAITING /scan', canvas.width/2, canvas.height/2);
   ctx.textAlign = 'left';
 })();
 </script>
