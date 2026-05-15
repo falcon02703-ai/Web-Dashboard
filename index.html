@@ -174,23 +174,28 @@
 <div class="page active" id="page-nav">
 <div class="main-grid">
 
-  <!-- MAP / RVIZ VNC -->
+  <!-- LIVE MAP CANVAS -->
   <div class="panel map-panel">
     <div class="panel-header">
-      <span class="panel-title">RViz — Map &amp; TF</span>
-      <span class="panel-badge" id="sb-vnc-badge">noVNC</span>
-    </div>
-    <div id="rviz-container">
-      <div id="vnc-overlay">
-        <div id="vnc-spinner"></div>
-        <span id="vnc-status-text">AWAITING VNC URL...</span>
-        <button id="vnc-reconnect" onclick="connectVNC()">RECONNECT</button>
+      <span class="panel-title">SLAM Map</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="cam-status-badge" id="map-canvas-badge">WAITING</span>
+        <span class="panel-badge">/map · /odom</span>
       </div>
     </div>
-    <div class="map-controls">
-      <input class="vnc-url-input" id="vnc-url-input" type="text" placeholder="ws://localhost:6080" value="ws://localhost:6080" title="websockify URL pointing to your VNC server (e.g. x11vnc + websockify)">
-      <button class="btn-sm primary" onclick="connectVNC()">CONNECT VNC</button>
-      <button class="btn-sm" onclick="disconnectVNC()">DISCONNECT</button>
+    <div style="position:relative;width:100%;height:calc(100vh - 244px);min-height:400px;background:#060910;overflow:hidden">
+      <canvas id="map-canvas" style="display:block;width:100%;height:100%"></canvas>
+      <div id="map-canvas-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:var(--font-mono);font-size:12px;color:var(--muted);background:rgba(6,9,16,.85);transition:opacity .4s">
+        <div style="width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div>
+        <span id="map-overlay-text" style="color:var(--text);letter-spacing:1px">WAITING FOR /map</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">ZOOM</span>
+      <input type="range" id="map-zoom" min="0.5" max="8" step="0.1" value="2" style="width:100px;accent-color:var(--accent)" oninput="redrawMap()">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent)" id="map-zoom-label">2.0×</span>
+      <button class="btn-sm" onclick="resetMapView()" style="margin-left:4px">RESET VIEW</button>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:auto" id="map-size-label">-- × -- cells</span>
     </div>
   </div>
 
@@ -382,7 +387,7 @@
 <!-- ══════════════ STATUS BAR ══════════════ -->
 <div class="status-bar">
   <span>ROSBRIDGE <span id="sb-ros" style="color:var(--muted)">DISCONNECTED</span></span>
-  <span>VNC <span id="sb-vnc" style="color:var(--muted)">--</span></span>
+  <span>MAP <span id="sb-vnc" style="color:var(--muted)">--</span></span>
   <span>ODOM <span id="sb-odom" style="color:var(--muted)">--</span></span>
   <span>SCAN <span id="sb-scan" style="color:var(--muted)">--</span></span>
   <span style="position:absolute;right:28px">TIME <span id="sb-time">--</span></span>
@@ -411,6 +416,7 @@ function buildRos(url) {
     document.getElementById('sb-ros').textContent = 'OK';
     document.getElementById('sb-ros').style.color = 'var(--success)';
     initTopics();
+    initMapCanvas();
   });
   ros.on('error', function(e) {
     setConnStatus('error', 'ERROR');
@@ -476,6 +482,10 @@ function initTopics() {
 
     document.getElementById('sb-odom').textContent = p.position.x.toFixed(2) + ', ' + p.position.y.toFixed(2);
     document.getElementById('sb-odom').style.color = 'var(--success)';
+    // Update robot pose for map overlay
+    _robotX   = p.position.x;
+    _robotY   = p.position.y;
+    _robotYaw = yaw * Math.PI / 180;
     setMapStatus(true, 'SLAM TOOLBOX — MAPPING');
   });
 
@@ -816,6 +826,9 @@ function showToast(msg, isError) {
 // ─────────────────────────────────────────────────────────────────────────────
 buildRos('ws://localhost:9090');
 
+// Draw empty map canvas immediately
+redrawMap();
+
 // Draw empty laser canvas immediately
 (function() {
   var canvas = document.getElementById('laser-canvas');
@@ -831,125 +844,206 @@ buildRos('ws://localhost:9090');
 </script>
 
 
-<!-- ══════════════ noVNC (ES Module) ══════════════ -->
-<script type="module">
-async function initVNC() {
-  var overlay    = document.getElementById('vnc-overlay');
-  var statusText = document.getElementById('vnc-status-text');
-  var spinner    = document.getElementById('vnc-spinner');
-  var reconnBtn  = document.getElementById('vnc-reconnect');
+<!-- ══════════════ LIVE MAP CANVAS ══════════════ -->
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// MAP CANVAS — subscribes to /map (nav_msgs/OccupancyGrid) via rosbridge
+// and renders it with the robot pose overlaid from /odom
+// ─────────────────────────────────────────────────────────────────────────────
+var _mapData      = null;   // latest OccupancyGrid message
+var _mapOffsetX   = 0;      // pan offset in pixels
+var _mapOffsetY   = 0;
+var _mapDragStart = null;
+var _robotX       = 0;      // robot world position (metres)
+var _robotY       = 0;
+var _robotYaw     = 0;
 
-  statusText.textContent   = 'READY — enter VNC URL above and click CONNECT VNC';
-  spinner.style.display    = 'none';
-  reconnBtn.style.display  = 'none';
+function initMapCanvas() {
+  var canvas = document.getElementById('map-canvas');
+  if (!canvas) return;
 
-  function setStatus(msg, showSpinner, showReconnect) {
-    statusText.textContent   = msg;
-    spinner.style.display    = showSpinner   ? 'block' : 'none';
-    reconnBtn.style.display  = showReconnect ? 'inline-block' : 'none';
-    overlay.classList.remove('hidden');
-  }
+  // ── Subscribe to /map ──
+  var mapSub = new ROSLIB.Topic({
+    ros: ros,
+    name: '/map',
+    messageType: 'nav_msgs/OccupancyGrid',
+    throttle_rate: 2000,  // redraw at most every 2 s (map updates are slow)
+    queue_length: 1
+  });
+  mapSub.subscribe(function(msg) {
+    _mapData = msg;
+    var badge   = document.getElementById('map-canvas-badge');
+    var overlay = document.getElementById('map-canvas-overlay');
+    badge.textContent = 'LIVE';
+    badge.className   = 'cam-status-badge live';
+    overlay.style.opacity         = '0';
+    overlay.style.pointerEvents   = 'none';
+    document.getElementById('sb-vnc').textContent  = 'LIVE';
+    document.getElementById('sb-vnc').style.color  = 'var(--success)';
+    var w = msg.info.width, h = msg.info.height;
+    document.getElementById('map-size-label').textContent = w + ' × ' + h + ' cells';
+    redrawMap();
+  });
 
-  window._setVncStatus = setStatus;
+  // ── Pan with mouse drag ──
+  canvas.addEventListener('mousedown', function(e) {
+    _mapDragStart = { x: e.clientX - _mapOffsetX, y: e.clientY - _mapOffsetY };
+  });
+  canvas.addEventListener('mousemove', function(e) {
+    if (!_mapDragStart) return;
+    _mapOffsetX = e.clientX - _mapDragStart.x;
+    _mapOffsetY = e.clientY - _mapDragStart.y;
+    redrawMap();
+  });
+  canvas.addEventListener('mouseup',    function() { _mapDragStart = null; });
+  canvas.addEventListener('mouseleave', function() { _mapDragStart = null; });
 
-  let RFB;
-  try {
-    var mod = await import('https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js');
-    RFB = mod.default;
-    console.log('[VNC] noVNC loaded');
-  } catch(e) {
-    setStatus('noVNC LOAD ERROR — check network', false, false);
+  // ── Zoom with scroll wheel ──
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var z = document.getElementById('map-zoom');
+    var v = parseFloat(z.value) - e.deltaY * 0.005;
+    z.value = Math.max(0.5, Math.min(8, v));
+    redrawMap();
+  }, { passive: false });
+
+  window.addEventListener('resize', redrawMap);
+}
+
+function redrawMap() {
+  var canvas = document.getElementById('map-canvas');
+  if (!canvas) return;
+
+  // Sync canvas pixel size to its CSS size
+  canvas.width  = canvas.offsetWidth  || 800;
+  canvas.height = canvas.offsetHeight || 500;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  // Background
+  ctx.fillStyle = '#060910';
+  ctx.fillRect(0, 0, W, H);
+
+  var zoom = parseFloat(document.getElementById('map-zoom').value);
+  document.getElementById('map-zoom-label').textContent = zoom.toFixed(1) + '×';
+
+  if (!_mapData) {
+    ctx.fillStyle = 'rgba(0,229,255,0.25)';
+    ctx.font = '12px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('WAITING FOR /map — drive the robot to build a map', W/2, H/2);
+    ctx.textAlign = 'left';
     return;
   }
 
-  window.connectVNC = async function() {
-    var url = document.getElementById('vnc-url-input').value.trim();
-    if (!url) { setStatus('Enter a VNC WebSocket URL above', false, false); return; }
+  var info    = _mapData.info;
+  var data    = _mapData.data;
+  var mapW    = info.width;
+  var mapH    = info.height;
+  var res     = info.resolution;   // metres per cell
+  var cellPx  = res * zoom * 100;  // pixels per cell (100px = 1 m at zoom 1)
 
-    if (window._vncRfb) {
-      try { window._vncRfb.disconnect(); } catch(_) {}
-      window._vncRfb = null;
+  // Centre the map in the canvas + apply pan offset
+  var originX = W/2 - (mapW * cellPx)/2 + _mapOffsetX;
+  var originY = H/2 - (mapH * cellPx)/2 + _mapOffsetY;
+
+  // Draw map cells
+  for (var row = 0; row < mapH; row++) {
+    for (var col = 0; col < mapW; col++) {
+      var val = data[row * mapW + col];
+      var color;
+      if      (val === -1)       color = '#1a2330';   // unknown  — dark blue-grey
+      else if (val === 0)        color = '#e8edf2';   // free     — light
+      else if (val >= 65)        color = '#1e3a5f';   // occupied — dark blue (obstacle)
+      else                       color = '#8aacc8';   // low prob — mid
+      ctx.fillStyle = color;
+      // ROS map: row 0 = bottom of map; canvas y increases downward → flip row
+      var px = originX + col * cellPx;
+      var py = originY + (mapH - 1 - row) * cellPx;
+      ctx.fillRect(px, py, cellPx + 0.5, cellPx + 0.5); // +0.5 fills gaps between cells
     }
+  }
 
-    setStatus('CONNECTING TO ' + url + '...', true, false);
-    var container = document.getElementById('rviz-container');
-    var rfb;
-    try {
-      rfb = new RFB(container, url);
-    } catch(e) {
-      setStatus('RFB init error: ' + e.message, false, true);
-      return;
-    }
+  // Map border
+  ctx.strokeStyle = 'rgba(0,229,255,0.2)';
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(originX, originY, mapW * cellPx, mapH * cellPx);
 
-    rfb.viewOnly        = false;
-    rfb.scaleViewport   = true;
-    rfb.clipViewport    = true;
-    rfb.resizeSession   = true;
-    rfb.background      = '#060910';
+  // Grid lines every 1 m
+  ctx.strokeStyle = 'rgba(0,229,255,0.06)';
+  ctx.lineWidth   = 0.5;
+  var mPerCell = res;
+  var cellsPerMetre = Math.round(1 / mPerCell);
+  for (var c = 0; c <= mapW; c += cellsPerMetre) {
+    ctx.beginPath();
+    ctx.moveTo(originX + c * cellPx, originY);
+    ctx.lineTo(originX + c * cellPx, originY + mapH * cellPx);
+    ctx.stroke();
+  }
+  for (var r = 0; r <= mapH; r += cellsPerMetre) {
+    ctx.beginPath();
+    ctx.moveTo(originX,                   originY + r * cellPx);
+    ctx.lineTo(originX + mapW * cellPx,   originY + r * cellPx);
+    ctx.stroke();
+  }
 
-    rfb.addEventListener('connect', function() {
-      console.log('[VNC] Connected');
-      overlay.classList.add('hidden');
-      document.getElementById('sb-vnc').textContent = 'LIVE';
-      document.getElementById('sb-vnc').style.color = 'var(--success)';
-      document.getElementById('sb-vnc-badge').textContent = 'VNC LIVE';
-      document.getElementById('sb-vnc-badge').style.color = 'var(--success)';
-      window._vncConnected = true;
-      // Periodic resize nudge to keep canvas filling the container
-      if (window._vncResizeTimer) clearInterval(window._vncResizeTimer);
-      window._vncResizeTimer = setInterval(function() {
-        var c = document.getElementById('rviz-container');
-        var h = c.style.height;
-        c.style.height = (c.offsetHeight + 1) + 'px';
-        requestAnimationFrame(function() { c.style.height = h; });
-      }, 3000);
-    });
+  // ── Robot pose ──
+  // Convert world coords (metres) to canvas pixels
+  // Map origin is at (info.origin.position.x, info.origin.position.y) in world frame
+  var ox   = info.origin.position.x;
+  var oy   = info.origin.position.y;
+  var robCanvasX = originX + (_robotX - ox) / res * cellPx;
+  var robCanvasY = originY + (mapH - 1 - (_robotY - oy) / res) * cellPx;
 
-    rfb.addEventListener('disconnect', function(e) {
-      window._vncConnected = false;
-      if (window._vncResizeTimer) { clearInterval(window._vncResizeTimer); }
-      var reason = (e.detail && !e.detail.clean) ? ('VNC LOST: ' + (e.detail.reason || 'unexpected')) : 'VNC DISCONNECTED';
-      setStatus(reason, false, true);
-      document.getElementById('sb-vnc').textContent = 'LOST';
-      document.getElementById('sb-vnc').style.color = 'var(--accent2)';
-      document.getElementById('sb-vnc-badge').textContent = 'noVNC';
-      document.getElementById('sb-vnc-badge').style.color = '';
-    });
+  // Robot body — cyan diamond
+  ctx.save();
+  ctx.translate(robCanvasX, robCanvasY);
+  ctx.rotate(-_robotYaw); // ROS yaw CCW, canvas clockwise
+  // Forward arrow
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, -18);
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, -18);
+  ctx.lineTo(-5, -12);
+  ctx.moveTo(0, -18);
+  ctx.lineTo(5, -12);
+  ctx.stroke();
+  // Body
+  ctx.beginPath();
+  ctx.arc(0, 0, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#00e5ff';
+  ctx.fill();
+  ctx.restore();
 
-    rfb.addEventListener('credentialsrequired', function() {
-      var pw = prompt('VNC password:');
-      if (pw !== null) rfb.sendCredentials({ password: pw });
-    });
-
-    rfb.addEventListener('securityfailure', function(e) {
-      setStatus('VNC AUTH FAILED: ' + ((e.detail && e.detail.reason) || 'unknown'), false, true);
-    });
-
-    window._vncRfb = rfb;
-  };
-
-  window.disconnectVNC = function() {
-    if (window._vncRfb) {
-      try { window._vncRfb.disconnect(); } catch(_) {}
-      window._vncRfb = null;
-    }
-    window._setVncStatus('DISCONNECTED', false, false);
-    document.getElementById('sb-vnc').textContent = '--';
-    document.getElementById('sb-vnc').style.color = 'var(--muted)';
-  };
-
-  // Tab focus: reconnect VNC if it dropped while away
-  document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'visible' && !window._vncConnected) {
-      var url = document.getElementById('vnc-url-input').value.trim();
-      if (url) window.connectVNC();
-    }
-  });
+  // Scale bar
+  var barMetres = 1;
+  var barPx     = barMetres / res * cellPx;
+  var bx = 20, by = H - 24;
+  ctx.fillStyle    = 'rgba(0,229,255,0.15)';
+  ctx.fillRect(bx, by, barPx, 6);
+  ctx.strokeStyle  = 'rgba(0,229,255,0.6)';
+  ctx.lineWidth    = 1;
+  ctx.strokeRect(bx, by, barPx, 6);
+  ctx.fillStyle    = 'rgba(0,229,255,0.7)';
+  ctx.font         = '9px "Share Tech Mono", monospace';
+  ctx.fillText('1 m', bx + barPx + 4, by + 6);
 }
 
-window.connectVNC    = function() { console.log('[VNC] module not ready yet'); };
-window.disconnectVNC = function() {};
-initVNC();
+function resetMapView() {
+  _mapOffsetX = 0;
+  _mapOffsetY = 0;
+  document.getElementById('map-zoom').value = '2';
+  redrawMap();
+}
+
+// Hook into odom to update robot pose for map overlay
+// (odom subscriber already exists in initTopics — we just read _robotX/Y/Yaw)
+// Patch setMapStatus to also trigger a map redraw
+var _origSetMapStatus = window.setMapStatus;
 </script>
 
 </body>
