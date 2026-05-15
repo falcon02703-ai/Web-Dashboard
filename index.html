@@ -656,7 +656,7 @@ function drawScan(msg) {
       var range = ranges[i];
       if (!isFinite(range) || range < rmin || range > maxRange) continue;
       var angle = amin + i * ainc;
-      var px = cx + Math.sin(angle) * range * scale;   // sin for x (ROS: x=fwd, y=left)
+      var px = cx - Math.sin(angle) * range * scale;   // negated: ROS y=left → canvas x=right
       var py = cy - Math.cos(angle) * range * scale;   // negate cos for canvas y-down
       if (firstPoint) { ctx.moveTo(px, py); firstPoint = false; }
       else { ctx.lineTo(px, py); }
@@ -674,7 +674,7 @@ function drawScan(msg) {
     var range = ranges[i];
     if (!isFinite(range) || range < rmin || range > maxRange) continue;
     var angle = amin + i * ainc;
-    var px = cx + Math.sin(angle)  * range * scale;
+    var px = cx - Math.sin(angle) * range * scale;
     var py = cy - Math.cos(angle) * range * scale;
 
     // Color by proportional distance
