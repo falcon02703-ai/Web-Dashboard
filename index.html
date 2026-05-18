@@ -174,7 +174,7 @@
     <span class="tab-dot"></span> Navigation
   </button>
   <button class="page-tab" id="tab-laser" onclick="switchTab('laser')">
-    <span class="tab-dot"></span> Laser Scan
+    <span class="tab-dot"></span> Map View
     <span class="tab-live-badge" id="laser-live-badge">LIVE</span>
   </button>
 </div>
@@ -322,59 +322,81 @@
 </div><!-- /#page-nav -->
 
 
-<!-- ══════════════ PAGE: LASER SCAN ══════════════ -->
+<!-- ══════════════ PAGE: MAP VIEW ══════════════ -->
 <div class="page" id="page-laser">
   <div class="laser-grid">
 
-    <!-- Canvas — fills available height -->
+    <!-- Canvas — SLAM map + scan overlay + robot pose -->
     <div class="laser-canvas-panel">
       <div class="panel-header">
-        <span class="panel-title">LiDAR Scan</span>
+        <span class="panel-title">SLAM Map</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="cam-status-badge" id="laser-status-badge">WAITING</span>
-          <span class="panel-badge">/scan</span>
+          <span class="panel-badge">/map · /scan · /odom</span>
         </div>
       </div>
-      <canvas id="laser-canvas"></canvas>
+      <canvas id="laser-canvas" style="cursor:grab"></canvas>
     </div>
 
     <!-- Sidebar -->
     <div class="laser-sidebar">
 
+      <!-- MAP STATS -->
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Map Stats</span></div>
+        <div class="laser-stat-grid">
+          <div class="laser-stat-cell"><div class="laser-stat-label">WIDTH (cells)</div><div class="laser-stat-value" id="ls-map-w">--</div></div>
+          <div class="laser-stat-cell"><div class="laser-stat-label">HEIGHT (cells)</div><div class="laser-stat-value" id="ls-map-h">--</div></div>
+          <div class="laser-stat-cell"><div class="laser-stat-label">RESOLUTION (m)</div><div class="laser-stat-value" id="ls-map-res">--</div></div>
+          <div class="laser-stat-cell"><div class="laser-stat-label">MAP Hz</div><div class="laser-stat-value" id="ls-map-hz">--</div></div>
+        </div>
+      </div>
+
+      <!-- SCAN STATS -->
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Scan Stats</span></div>
         <div class="laser-stat-grid">
-          <div class="laser-stat-cell"><div class="laser-stat-label">RANGE MAX (m)</div><div class="laser-stat-value" id="ls-range-max">--</div></div>
-          <div class="laser-stat-cell"><div class="laser-stat-label">RANGE MIN (m)</div><div class="laser-stat-value" id="ls-range-min">--</div></div>
-          <div class="laser-stat-cell"><div class="laser-stat-label">RAYS</div><div class="laser-stat-value" id="ls-rays">--</div></div>
           <div class="laser-stat-cell"><div class="laser-stat-label">VALID RAYS</div><div class="laser-stat-value" id="ls-valid">--</div></div>
-          <div class="laser-stat-cell"><div class="laser-stat-label">CLOSEST (m)</div><div class="laser-stat-value" id="ls-closest" style="color:var(--accent2)">--</div></div>
           <div class="laser-stat-cell"><div class="laser-stat-label">SCAN Hz</div><div class="laser-stat-value" id="ls-hz">--</div></div>
+          <div class="laser-stat-cell"><div class="laser-stat-label">CLOSEST (m)</div><div class="laser-stat-value" id="ls-closest" style="color:var(--accent2)">--</div></div>
+          <div class="laser-stat-cell"><div class="laser-stat-label">RANGE MAX</div><div class="laser-stat-value" id="ls-range-max">--</div></div>
         </div>
       </div>
 
+      <!-- DISPLAY CONTROLS -->
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Display</span></div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+          <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="show-scan" checked style="accent-color:var(--accent)"> SHOW SCAN OVERLAY
+          </label>
+          <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="show-robot" checked style="accent-color:var(--accent)"> SHOW ROBOT
+          </label>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">ZOOM</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" id="map-zoom" min="0.5" max="10" step="0.1" value="3"
+              style="flex:1;accent-color:var(--accent)" oninput="onZoom()">
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent);min-width:32px" id="map-zoom-label">3.0×</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">SCAN DOT SIZE</div>
+          <input type="range" id="dot-size" min="1" max="6" step="0.5" value="3" style="accent-color:var(--accent)">
+          <button class="btn-sm primary" onclick="resetMapView()" style="margin-top:2px">RESET VIEW</button>
+        </div>
+      </div>
+
+      <!-- LEGEND -->
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Legend</span></div>
         <div class="laser-legend">
-          <div class="legend-row"><div class="legend-dot" style="background:#00ff88"></div> Far (&gt;60% range)</div>
-          <div class="legend-row"><div class="legend-dot" style="background:#ffd600"></div> Medium (30–60%)</div>
-          <div class="legend-row"><div class="legend-dot" style="background:#ff6b35"></div> Close (&lt;30%)</div>
-          <div class="legend-row"><div class="legend-dot" style="background:#00e5ff"></div> Robot origin</div>
-          <div class="legend-row" style="color:var(--muted);font-size:9px;margin-top:4px">Forward = UP · Rings at 1 m intervals</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Display</span></div>
-        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
-          <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px">
-            <input type="checkbox" id="scan-trails" style="accent-color:var(--accent)"> PERSISTENCE TRAILS
-          </label>
-          <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px">
-            <input type="checkbox" id="scan-fill" style="accent-color:var(--accent)"> FILL POLYGON
-          </label>
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:4px">DOT SIZE</div>
-          <input type="range" id="dot-size" min="1" max="5" step="0.5" value="2" style="accent-color:var(--accent)">
+          <div class="legend-row"><div class="legend-dot" style="background:#e8edf2;border:1px solid #aaa"></div> Free space</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#1e3a5f"></div> Obstacle</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#1a2330"></div> Unknown</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#00ff88"></div> Scan — far</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#ffd600"></div> Scan — medium</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#ff6b35"></div> Scan — close</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#00e5ff"></div> Robot</div>
+          <div class="legend-row" style="color:var(--muted);font-size:9px;margin-top:4px">Drag to pan · Scroll to zoom</div>
         </div>
       </div>
 
@@ -444,6 +466,9 @@ function reconnectROS() {
 // ─────────────────────────────────────────────────────────────────────────────
 var _odomHzTimer = null, _odomMsgCount = 0;
 var _scanHzTimer = null, _scanMsgCount = 0;
+var _mapHzTimer  = null, _mapMsgCount  = 0;
+// Robot pose (updated from odom, used by map renderer)
+var _robotX = 0, _robotY = 0, _robotYaw = 0;
 
 function initTopics() {
   // ── cmd_vel publisher ──
@@ -469,6 +494,9 @@ function initTopics() {
     document.getElementById('odomAngVel').textContent = msg.twist.twist.angular.z.toFixed(3);
     document.getElementById('sb-odom').textContent    = p.position.x.toFixed(2) + ', ' + p.position.y.toFixed(2);
     document.getElementById('sb-odom').style.color    = 'var(--success)';
+    _robotX   = p.position.x;
+    _robotY   = p.position.y;
+    _robotYaw = Math.atan2(siny, cosy);
     setMapStatus(true, 'SLAM TOOLBOX — MAPPING');
   });
   if (_odomHzTimer) clearInterval(_odomHzTimer);
@@ -484,18 +512,46 @@ function initTopics() {
   });
   scanSub.subscribe(function(msg) {
     _scanMsgCount++;
-    drawScan(msg);
-    updateScanStats(msg);
-    document.getElementById('laser-status-badge').textContent  = 'LIVE';
-    document.getElementById('laser-status-badge').className    = 'cam-status-badge live';
-    document.getElementById('sb-scan').textContent             = 'LIVE';
-    document.getElementById('sb-scan').style.color             = 'var(--success)';
-    document.getElementById('laser-live-badge').className      = 'tab-live-badge visible';
+    _lastScanMsg = msg;
+    // Update scan stats
+    var ranges = msg.ranges, valid = 0, closest = Infinity;
+    for (var i = 0; i < ranges.length; i++) {
+      var r = ranges[i];
+      if (isFinite(r) && r >= msg.range_min && r <= msg.range_max) { valid++; if (r < closest) closest = r; }
+    }
+    document.getElementById('ls-valid').textContent   = valid;
+    document.getElementById('ls-closest').textContent = isFinite(closest) ? closest.toFixed(3) : '--';
+    document.getElementById('ls-range-max').textContent = isFinite(msg.range_max) ? msg.range_max.toFixed(2) : '--';
+    document.getElementById('laser-status-badge').textContent = 'LIVE';
+    document.getElementById('laser-status-badge').className   = 'cam-status-badge live';
+    document.getElementById('sb-scan').textContent            = 'LIVE';
+    document.getElementById('sb-scan').style.color            = 'var(--success)';
+    document.getElementById('laser-live-badge').className     = 'tab-live-badge visible';
+    redrawMapView();
   });
   if (_scanHzTimer) clearInterval(_scanHzTimer);
   _scanHzTimer = setInterval(function() {
     document.getElementById('ls-hz').textContent = _scanMsgCount;
     _scanMsgCount = 0;
+  }, 1000);
+
+  // ── SLAM map ──
+  var mapSub = new ROSLIB.Topic({
+    ros: ros, name: '/map', messageType: 'nav_msgs/OccupancyGrid',
+    throttle_rate: 2000, queue_length: 1
+  });
+  mapSub.subscribe(function(msg) {
+    _mapMsgCount++;
+    _mapData = msg;
+    document.getElementById('ls-map-w').textContent   = msg.info.width;
+    document.getElementById('ls-map-h').textContent   = msg.info.height;
+    document.getElementById('ls-map-res').textContent = msg.info.resolution.toFixed(3);
+    redrawMapView();
+  });
+  if (_mapHzTimer) clearInterval(_mapHzTimer);
+  _mapHzTimer = setInterval(function() {
+    document.getElementById('ls-map-hz').textContent = _mapMsgCount;
+    _mapMsgCount = 0;
   }, 1000);
 }
 
@@ -552,113 +608,192 @@ document.addEventListener('keyup', function(e) {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LASER SCAN CANVAS
+// MAP VIEW — renders /map + /scan overlay + robot pose
 // ─────────────────────────────────────────────────────────────────────────────
 var _lastScanMsg = null;
+var _mapData     = null;
+var _mapOffsetX  = 0, _mapOffsetY = 0, _mapDragStart = null;
 
-function drawScan(msg) {
-  _lastScanMsg = msg;
+function onZoom() {
+  document.getElementById('map-zoom-label').textContent =
+    parseFloat(document.getElementById('map-zoom').value).toFixed(1) + '×';
+  redrawMapView();
+}
+
+function resetMapView() {
+  _mapOffsetX = 0; _mapOffsetY = 0;
+  document.getElementById('map-zoom').value = '3';
+  onZoom();
+}
+
+function redrawMapView() {
   var canvas = document.getElementById('laser-canvas');
-  // Match canvas pixel size to its CSS rendered size
+  if (!canvas) return;
   canvas.width  = canvas.offsetWidth;
   canvas.height = canvas.offsetHeight;
   var ctx = canvas.getContext('2d');
   var W = canvas.width, H = canvas.height;
-  var cx = W / 2, cy = H / 2;
 
-  var maxRange = isFinite(msg.range_max) ? msg.range_max : 3.5;
-  // Scale so range_max fits within 44% of the shorter axis
-  var scale = (Math.min(W, H) * 0.44) / maxRange;
-
-  var trails = document.getElementById('scan-trails').checked;
-  var fill   = document.getElementById('scan-fill').checked;
-  var dotR   = parseFloat(document.getElementById('dot-size').value);
-
-  // Background
-  ctx.fillStyle = trails ? 'rgba(6,9,16,0.35)' : '#060910';
+  ctx.fillStyle = '#060910';
   ctx.fillRect(0, 0, W, H);
 
-  // Range rings
-  for (var r = 1; r <= maxRange + 0.01; r++) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(0,229,255,0.09)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(0,229,255,0.28)';
-    ctx.font = '9px "Share Tech Mono",monospace';
-    ctx.fillText(r + 'm', cx + r * scale + 3, cy - 2);
+  if (!_mapData) {
+    ctx.fillStyle = 'rgba(0,229,255,0.3)';
+    ctx.font = '12px "Share Tech Mono",monospace'; ctx.textAlign = 'center';
+    ctx.fillText('WAITING FOR /map — drive the robot to start mapping', W/2, H/2);
+    ctx.textAlign = 'left'; return;
   }
 
-  // Forward tick
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - maxRange * scale);
-  ctx.lineTo(cx, cy - maxRange * scale - 10);
-  ctx.strokeStyle = 'rgba(0,229,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.fillStyle = 'rgba(0,229,255,0.4)';
-  ctx.font = '9px "Share Tech Mono",monospace';
-  ctx.fillText('FWD', cx + 3, cy - maxRange * scale - 2);
+  var info   = _mapData.info;
+  var data   = _mapData.data;
+  var mapW   = info.width, mapH = info.height, res = info.resolution;
+  var zoom   = parseFloat(document.getElementById('map-zoom').value);
+  var cellPx = res * zoom * 100;  // px per cell (100px = 1m at zoom 1×)
 
-  var ranges = msg.ranges, amin = msg.angle_min, ainc = msg.angle_increment, rmin = msg.range_min;
+  // Centre the map + apply pan
+  var originX = W/2 - (mapW * cellPx)/2 + _mapOffsetX;
+  var originY = H/2 - (mapH * cellPx)/2 + _mapOffsetY;
 
-  // Polygon fill
-  if (fill) {
-    ctx.beginPath();
-    var first = true;
-    for (var i = 0; i < ranges.length; i++) {
-      var rng = ranges[i];
-      if (!isFinite(rng) || rng < rmin || rng > maxRange) continue;
-      var ang = amin + i * ainc;
-      var px = cx - Math.sin(ang) * rng * scale;
-      var py = cy - Math.cos(ang) * rng * scale;
-      if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+  // ── Draw map cells ──
+  for (var row = 0; row < mapH; row++) {
+    for (var col = 0; col < mapW; col++) {
+      var val = data[row * mapW + col];
+      if      (val === -1) ctx.fillStyle = '#1a2330';  // unknown
+      else if (val === 0)  ctx.fillStyle = '#e8edf2';  // free
+      else                 ctx.fillStyle = '#1e3a5f';  // occupied
+      // ROS row 0 = bottom; canvas y increases downward → flip
+      ctx.fillRect(
+        originX + col * cellPx,
+        originY + (mapH - 1 - row) * cellPx,
+        cellPx + 0.5, cellPx + 0.5
+      );
     }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(0,229,255,0.05)'; ctx.fill();
-    ctx.strokeStyle = 'rgba(0,229,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
   }
 
-  // Scan points
-  for (var i = 0; i < ranges.length; i++) {
-    var rng = ranges[i];
-    if (!isFinite(rng) || rng < rmin || rng > maxRange) continue;
-    var ang = amin + i * ainc;
-    var px = cx - Math.sin(ang) * rng * scale;
-    var py = cy - Math.cos(ang) * rng * scale;
-    var t = rng / maxRange;
-    var rc, gc, bc;
-    if (t > 0.6)      { rc=0;   gc=255; bc=136; }
-    else if (t > 0.3) { rc=255; gc=214; bc=0;   }
-    else               { rc=255; gc=107; bc=53;  }
+  // Map border
+  ctx.strokeStyle = 'rgba(0,229,255,0.15)'; ctx.lineWidth = 1;
+  ctx.strokeRect(originX, originY, mapW * cellPx, mapH * cellPx);
+
+  // 1 m grid lines
+  var cellsPerM = Math.round(1 / res);
+  ctx.strokeStyle = 'rgba(0,229,255,0.06)'; ctx.lineWidth = 0.5;
+  for (var c = 0; c <= mapW; c += cellsPerM) {
     ctx.beginPath();
-    ctx.arc(px, py, dotR, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgb('+rc+','+gc+','+bc+')';
-    ctx.fill();
+    ctx.moveTo(originX + c*cellPx, originY);
+    ctx.lineTo(originX + c*cellPx, originY + mapH*cellPx);
+    ctx.stroke();
+  }
+  for (var r = 0; r <= mapH; r += cellsPerM) {
+    ctx.beginPath();
+    ctx.moveTo(originX,              originY + r*cellPx);
+    ctx.lineTo(originX + mapW*cellPx, originY + r*cellPx);
+    ctx.stroke();
   }
 
-  // Robot marker
-  ctx.beginPath();
-  ctx.moveTo(cx, cy-9); ctx.lineTo(cx+6, cy); ctx.lineTo(cx, cy+9); ctx.lineTo(cx-6, cy);
-  ctx.closePath(); ctx.fillStyle = '#00e5ff'; ctx.fill();
-  ctx.beginPath(); ctx.moveTo(cx, cy-9); ctx.lineTo(cx, cy-22);
-  ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 2; ctx.stroke();
-}
-
-function updateScanStats(msg) {
-  var ranges = msg.ranges, valid = 0, closest = Infinity;
-  for (var i = 0; i < ranges.length; i++) {
-    var r = ranges[i];
-    if (isFinite(r) && r >= msg.range_min && r <= msg.range_max) { valid++; if (r < closest) closest = r; }
+  // Helper: world coords → canvas coords
+  var ox = info.origin.position.x, oy = info.origin.position.y;
+  function worldToCanvas(wx, wy) {
+    return {
+      x: originX + (wx - ox) / res * cellPx,
+      y: originY + (mapH - 1 - (wy - oy) / res) * cellPx
+    };
   }
-  document.getElementById('ls-range-max').textContent = isFinite(msg.range_max) ? msg.range_max.toFixed(2) : '--';
-  document.getElementById('ls-range-min').textContent = isFinite(msg.range_min) ? msg.range_min.toFixed(2) : '--';
-  document.getElementById('ls-rays').textContent    = msg.ranges.length;
-  document.getElementById('ls-valid').textContent   = valid;
-  document.getElementById('ls-closest').textContent = isFinite(closest) ? closest.toFixed(3) : '--';
+
+  // ── Draw scan overlay in world frame ──
+  if (_lastScanMsg && document.getElementById('show-scan').checked) {
+    var msg    = _lastScanMsg;
+    var dotR   = parseFloat(document.getElementById('dot-size').value);
+    var rmin   = msg.range_min, rmax = isFinite(msg.range_max) ? msg.range_max : 3.5;
+    var amin   = msg.angle_min, ainc = msg.angle_increment;
+    var cosY   = Math.cos(_robotYaw), sinY = Math.sin(_robotYaw);
+
+    for (var i = 0; i < msg.ranges.length; i++) {
+      var rng = msg.ranges[i];
+      if (!isFinite(rng) || rng < rmin || rng > rmax) continue;
+      var ang = amin + i * ainc;
+      // Scan point in robot frame: x=fwd, y=left
+      var xr = Math.cos(ang) * rng, yr = Math.sin(ang) * rng;
+      // Rotate to world frame
+      var xw = _robotX + cosY * xr - sinY * yr;
+      var yw = _robotY + sinY * xr + cosY * yr;
+      var cp = worldToCanvas(xw, yw);
+      var t = rng / rmax;
+      var rc, gc, bc;
+      if      (t > 0.6) { rc=0;   gc=255; bc=136; }
+      else if (t > 0.3) { rc=255; gc=214; bc=0;   }
+      else               { rc=255; gc=107; bc=53;  }
+      ctx.beginPath();
+      ctx.arc(cp.x, cp.y, dotR, 0, Math.PI*2);
+      ctx.fillStyle = 'rgb('+rc+','+gc+','+bc+')';
+      ctx.fill();
+    }
+  }
+
+  // ── Draw robot ──
+  if (document.getElementById('show-robot').checked) {
+    var rp = worldToCanvas(_robotX, _robotY);
+    ctx.save();
+    ctx.translate(rp.x, rp.y);
+    ctx.rotate(-_robotYaw); // canvas y-down, ROS CCW positive
+
+    // Direction arrow
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(0, -20);
+    ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -20); ctx.lineTo(-5, -13);
+    ctx.moveTo(0, -20); ctx.lineTo( 5, -13);
+    ctx.stroke();
+
+    // Body circle
+    ctx.beginPath();
+    ctx.arc(0, 0, 7, 0, Math.PI*2);
+    ctx.fillStyle = '#00e5ff'; ctx.fill();
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = 'rgba(0,229,255,0.7)';
+    ctx.font = '9px "Share Tech Mono",monospace';
+    ctx.fillText('WAFFLE PI', rp.x + 10, rp.y - 10);
+  }
+
+  // Scale bar (1 m)
+  var barPx = (1 / res) * cellPx;
+  var bx = 16, by = H - 20;
+  ctx.fillStyle = 'rgba(0,229,255,0.12)'; ctx.fillRect(bx, by, barPx, 5);
+  ctx.strokeStyle = 'rgba(0,229,255,0.5)'; ctx.lineWidth = 1;
+  ctx.strokeRect(bx, by, barPx, 5);
+  ctx.fillStyle = 'rgba(0,229,255,0.6)';
+  ctx.font = '9px "Share Tech Mono",monospace';
+  ctx.fillText('1 m', bx + barPx + 4, by + 5);
 }
 
-// Redraw on resize or tab switch
-window.addEventListener('resize', function() { if (_lastScanMsg) drawScan(_lastScanMsg); });
+// Pan
+(function() {
+  var canvas = document.getElementById('laser-canvas');
+  canvas.addEventListener('mousedown', function(e) {
+    canvas.style.cursor = 'grabbing';
+    _mapDragStart = { x: e.clientX - _mapOffsetX, y: e.clientY - _mapOffsetY };
+  });
+  canvas.addEventListener('mousemove', function(e) {
+    if (!_mapDragStart) return;
+    _mapOffsetX = e.clientX - _mapDragStart.x;
+    _mapOffsetY = e.clientY - _mapDragStart.y;
+    redrawMapView();
+  });
+  function endDrag() { _mapDragStart = null; canvas.style.cursor = 'grab'; }
+  canvas.addEventListener('mouseup', endDrag);
+  canvas.addEventListener('mouseleave', endDrag);
+  // Scroll to zoom
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var z = document.getElementById('map-zoom');
+    z.value = Math.max(0.5, Math.min(10, parseFloat(z.value) - e.deltaY * 0.005));
+    onZoom();
+  }, { passive: false });
+})();
+
+window.addEventListener('resize', function() { redrawMapView(); });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CAMERA (MJPEG) — indexed: n=1 overhead, n=2 robot
@@ -724,7 +859,7 @@ function switchTab(name) {
   document.querySelectorAll('.page-tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'laser' && _lastScanMsg) drawScan(_lastScanMsg);
+  if (name === 'laser') redrawMapView();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -756,18 +891,8 @@ function showToast(msg, isError) {
 // ─────────────────────────────────────────────────────────────────────────────
 buildRos('ws://localhost:9090');
 
-// Draw placeholder on the laser canvas immediately
-requestAnimationFrame(function() {
-  var canvas = document.getElementById('laser-canvas');
-  canvas.width  = canvas.offsetWidth  || 600;
-  canvas.height = canvas.offsetHeight || 400;
-  var ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#060910'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = 'rgba(0,229,255,0.3)';
-  ctx.font = '12px "Share Tech Mono",monospace'; ctx.textAlign = 'center';
-  ctx.fillText('AWAITING /scan', canvas.width/2, canvas.height/2);
-  ctx.textAlign = 'left';
-});
+// Draw placeholder immediately
+requestAnimationFrame(function() { redrawMapView(); });
 </script>
 
 </body>
