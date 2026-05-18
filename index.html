@@ -12,112 +12,122 @@
       --accent:#00e5ff;--accent2:#ff6b35;--success:#00ff88;
       --warn:#ffd600;--text:#ccd6f6;--muted:#7a8fa6;
       --font-mono:'Share Tech Mono',monospace;--font-ui:'Rajdhani',sans-serif;
+      --header-h:65px;--tabs-h:42px;--statusbar-h:38px;
+      --chrome:calc(var(--header-h) + var(--tabs-h) + var(--statusbar-h));
     }
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:var(--bg);color:var(--text);font-family:var(--font-ui);overflow:hidden;height:100vh}
     body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,.015) 2px,rgba(0,229,255,.015) 4px);pointer-events:none;z-index:9999}
 
     /* ── HEADER ── */
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    header{height:var(--header-h);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
     .logo{display:flex;align-items:center;gap:12px}
-    .logo-icon{width:36px;height:36px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+    .logo-icon{width:36px;height:36px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);flex-shrink:0}
     .logo h1{font-size:22px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase}
     .logo span{font-size:11px;color:var(--muted);font-family:var(--font-mono);letter-spacing:2px;display:block}
     #conn-status{font-family:var(--font-mono);font-size:12px;display:flex;align-items:center;gap:12px}
     .conn-url{font-size:11px;color:var(--muted);letter-spacing:1px}
-    #conn-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);transition:background .3s}
+    #conn-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);transition:background .3s;flex-shrink:0}
     #conn-dot.connected{background:var(--success);animation:pulse 2s infinite}
     #conn-dot.error{background:var(--accent2)}
     @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{box-shadow:0 0 0 6px rgba(0,255,136,0)}}
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── TABS ── */
-    .page-tabs{display:flex;align-items:center;gap:0;padding:0 28px;background:var(--surface);border-bottom:2px solid var(--border);position:sticky;top:65px;z-index:90}
-    .page-tab{position:relative;font-family:var(--font-ui);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 20px;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;display:flex;align-items:center;gap:8px}
+    .page-tabs{height:var(--tabs-h);display:flex;align-items:center;padding:0 28px;background:var(--surface);border-bottom:2px solid var(--border);position:sticky;top:var(--header-h);z-index:90}
+    .page-tab{font-family:var(--font-ui);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 20px;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-2px;height:100%;transition:all .15s;display:flex;align-items:center;gap:8px}
     .page-tab:hover{color:var(--text)}
     .page-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-    .page-tab .tab-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .2s}
+    .page-tab .tab-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .2s;flex-shrink:0}
     .page-tab.active .tab-dot{background:var(--accent);box-shadow:0 0 6px var(--accent)}
-    .tab-live-badge{font-family:var(--font-mono);font-size:9px;color:var(--bg);background:var(--success);padding:1px 5px;border-radius:2px;margin-left:2px;display:none}
+    .tab-live-badge{font-family:var(--font-mono);font-size:9px;color:var(--bg);background:var(--success);padding:1px 5px;border-radius:2px;display:none}
     .tab-live-badge.visible{display:inline}
 
-    /* ── PAGES ── */
-    .page{display:none}
-    .page.active{display:block}
+    /* ── PAGES — exactly fill the viewport between tabs and status bar ── */
+    .page{display:none;height:calc(100vh - var(--chrome));overflow:hidden}
+    .page.active{display:flex;flex-direction:column}
 
-    /* ── PANELS ── */
+    /* ── SHARED PANEL STYLES ── */
     .panel{background:var(--surface);border:1px solid var(--border);border-radius:4px}
-    .panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);border-radius:4px 4px 0 0}
+    .panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);border-radius:4px 4px 0 0;flex-shrink:0}
     .panel-title{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent)}
     .panel-badge{font-family:var(--font-mono);font-size:10px;color:var(--muted);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:2px}
-
-    /* ── NAV PAGE LAYOUT ── */
-    .main-grid{display:grid;grid-template-columns:1fr 408px;gap:16px;padding:16px 28px 38px}
-    .map-panel{grid-column:1;overflow:hidden;border-radius:4px}
-    #rviz-container{width:100%;height:calc(100vh - 244px);min-height:400px;background:#060910;display:block;position:relative;overflow:hidden;contain:strict}
-    #rviz-container > div{position:absolute!important;top:0!important;left:0!important;width:100%!important;height:100%!important;margin:0!important;overflow:hidden!important}
-    #rviz-container canvas{display:block;width:100%!important;height:100%!important;margin:0!important;object-fit:contain!important;max-height:100%!important}
-    #vnc-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(6,9,16,.9);font-family:var(--font-mono);color:var(--muted);font-size:12px;z-index:10;transition:opacity .4s}
-    #vnc-overlay.hidden{opacity:0;pointer-events:none}
-    #vnc-spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-    #vnc-status-text{color:var(--text);letter-spacing:1px}
-    #vnc-reconnect{font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border:1px solid var(--accent2);color:var(--accent2);background:transparent;cursor:pointer;border-radius:2px;display:none}
-    #vnc-reconnect:hover{background:var(--accent2);color:var(--bg)}
-    .map-controls{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap;align-items:center}
-    .vnc-url-input{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 10px;border-radius:2px}
-    .vnc-url-input:focus{outline:none;border-color:var(--accent)}
-    .btn-sm{font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:2px;transition:all .15s;white-space:nowrap}
+    .cam-status-badge{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:2px;background:rgba(255,255,255,.05);color:var(--muted);transition:all .3s}
+    .cam-status-badge.live{color:var(--success);background:rgba(0,255,136,.08);animation:pulse 2s infinite}
+    .cam-status-badge.error{color:var(--accent2);background:rgba(255,107,53,.1)}
+    .btn-sm{font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:2px;transition:all .15s;white-space:nowrap;flex-shrink:0}
     .btn-sm:hover{border-color:var(--accent);color:var(--accent)}
     .btn-sm.primary{border-color:var(--accent);color:var(--accent)}
     .btn-sm.primary:hover{background:var(--accent);color:var(--bg)}
 
-    /* ── RIGHT COL ── */
-    .right-col{grid-column:2;display:flex;flex-direction:column;gap:16px;align-self:start;max-height:calc(100vh - 163px);overflow-y:auto;overflow-x:hidden;padding-bottom:4px;scrollbar-width:none}
+    /* ══ NAV PAGE ══════════════════════════════════════════════════════════ */
+    .nav-grid{
+      flex:1;min-height:0;
+      display:grid;grid-template-columns:1fr 408px;gap:16px;
+      padding:16px 28px;overflow:hidden;
+    }
+
+    /* Left — camera panel fills available height */
+    .cam-panel{
+      grid-column:1;display:flex;flex-direction:column;
+      background:var(--surface);border:1px solid var(--border);border-radius:4px;
+      overflow:hidden;min-height:0;
+    }
+    .cam-img-container{
+      flex:1;min-height:0;background:#000;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+    }
+    #cam-img{width:100%;height:100%;object-fit:contain;display:block}
+    .cam-controls{padding:8px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+    .cam-url-input{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 10px;border-radius:2px}
+    .cam-url-input:focus{outline:none;border-color:var(--accent)}
+    .cam-footer{padding:5px 16px 8px;font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6;flex-shrink:0}
+
+    /* Right — scrollable column */
+    .right-col{
+      grid-column:2;display:flex;flex-direction:column;gap:14px;
+      overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none;
+    }
     .right-col::-webkit-scrollbar{display:none}
 
-    /* ── ODOMETRY PANEL ── */
+    /* Odometry */
     .odom-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
     .odom-cell{background:var(--surface);padding:10px 14px}
     .odom-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
     .odom-value{font-family:var(--font-mono);font-size:18px;color:var(--accent)}
     .odom-value.small{font-size:14px}
     .odom-cell.full{grid-column:1/-1}
+    .slam-row{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-shrink:0}
+    .map-status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+    .map-status-dot.active{background:var(--success);animation:pulse 2s infinite}
 
-    /* ── TELEOP ── */
+    /* Teleop */
     .teleop-grid{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);gap:6px;padding:12px 16px;justify-content:center}
     .tele-btn{background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);font-size:20px;cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .1s;user-select:none}
     .tele-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08)}
     .tele-btn:active,.tele-btn.pressing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
     .tele-btn.stop{font-size:12px;font-family:var(--font-ui);font-weight:700;letter-spacing:1px;color:var(--accent2);border-color:var(--accent2)}
-    .teleop-footer{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;gap:7px}
+    .teleop-footer{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;gap:7px;flex-wrap:wrap}
     .teleop-footer label{font-family:var(--font-mono);font-size:10px;color:var(--muted);cursor:pointer;letter-spacing:1px;user-select:none;display:flex;align-items:center;gap:6px}
     .teleop-footer input[type=checkbox]{accent-color:var(--accent);width:12px;height:12px;cursor:pointer}
     .speed-row{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;color:var(--muted)}
     .speed-row input[type=range]{flex:1;accent-color:var(--accent)}
     .speed-val{color:var(--accent);min-width:36px}
 
-    /* ── GMAPPING STATUS ── */
-    .gmapping-row{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)}
-    .map-status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
-    .map-status-dot.active{background:var(--success);animation:pulse 2s infinite}
-    .map-status-dot.warn{background:var(--warn)}
-
-    /* ── CAMERA PAGE ── */
-    .camera-page-inner{padding:16px 28px 54px}
-    .cam-panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden}
-    #cam-img{width:100%;display:block;background:#000;border:none;max-height:calc(100vh - 260px);object-fit:contain}
-    .cam-controls{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .cam-url-input{flex:1;min-width:260px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 10px;border-radius:2px}
-    .cam-url-input:focus{outline:none;border-color:var(--accent)}
-    .cam-status-badge{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:2px;background:rgba(255,255,255,.05);color:var(--muted);transition:all .3s}
-    .cam-status-badge.live{color:var(--success);background:rgba(0,255,136,.08);animation:pulse 2s infinite}
-    .cam-status-badge.error{color:var(--accent2);background:rgba(255,107,53,.1)}
-
-    /* ── LASER PAGE ── */
-    .laser-page-inner{padding:16px 28px 54px;display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
-    .laser-canvas-panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden}
-    #laser-canvas{display:block;width:100%;background:#060910}
-    .laser-sidebar{display:flex;flex-direction:column;gap:16px}
+    /* ══ LASER PAGE ══════════════════════════════════════════════════════════ */
+    .laser-grid{
+      flex:1;min-height:0;
+      display:grid;grid-template-columns:1fr 300px;gap:16px;
+      padding:16px 28px;overflow:hidden;
+    }
+    .laser-canvas-panel{
+      display:flex;flex-direction:column;
+      background:var(--surface);border:1px solid var(--border);border-radius:4px;
+      overflow:hidden;min-height:0;
+    }
+    #laser-canvas{flex:1;display:block;width:100%;min-height:0;background:#060910}
+    .laser-sidebar{display:flex;flex-direction:column;gap:14px;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none}
+    .laser-sidebar::-webkit-scrollbar{display:none}
     .laser-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
     .laser-stat-cell{background:var(--surface);padding:10px 14px}
     .laser-stat-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
@@ -127,11 +137,11 @@
     .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 
     /* ── STATUS BAR ── */
-    .status-bar{display:flex;gap:24px;padding:8px 28px;background:var(--surface);border-top:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--muted);position:fixed;bottom:0;left:0;right:0;z-index:80}
+    .status-bar{height:var(--statusbar-h);display:flex;align-items:center;gap:24px;padding:0 28px;background:var(--surface);border-top:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--muted);position:fixed;bottom:0;left:0;right:0;z-index:80}
     .status-bar span{display:flex;align-items:center;gap:6px}
 
     /* ── TOAST ── */
-    #toast{position:fixed;bottom:60px;right:28px;background:var(--success);color:var(--bg);font-family:var(--font-mono);font-size:12px;padding:10px 18px;border-radius:3px;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:200}
+    #toast{position:fixed;bottom:48px;right:28px;background:var(--success);color:var(--bg);font-family:var(--font-mono);font-size:12px;padding:10px 18px;border-radius:3px;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:200}
     #toast.error{background:var(--accent2)}
     #toast.show{opacity:1;transform:translateY(0)}
   </style>
@@ -159,10 +169,6 @@
   <button class="page-tab active" id="tab-nav" onclick="switchTab('nav')">
     <span class="tab-dot"></span> Navigation
   </button>
-  <button class="page-tab" id="tab-cam" onclick="switchTab('cam')">
-    <span class="tab-dot"></span> Camera
-    <span class="tab-live-badge" id="cam-live-badge">LIVE</span>
-  </button>
   <button class="page-tab" id="tab-laser" onclick="switchTab('laser')">
     <span class="tab-dot"></span> Laser Scan
     <span class="tab-live-badge" id="laser-live-badge">LIVE</span>
@@ -172,162 +178,135 @@
 
 <!-- ══════════════ PAGE: NAVIGATION ══════════════ -->
 <div class="page active" id="page-nav">
-<div class="main-grid">
+  <div class="nav-grid">
 
-  <!-- LIVE MAP CANVAS -->
-  <div class="panel map-panel">
-    <div class="panel-header">
-      <span class="panel-title">SLAM Map</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="cam-status-badge" id="map-canvas-badge">WAITING</span>
-        <span class="panel-badge">/map · /odom</span>
-      </div>
-    </div>
-    <div style="position:relative;width:100%;height:calc(100vh - 244px);min-height:400px;background:#060910;overflow:hidden">
-      <canvas id="map-canvas" style="display:block;width:100%;height:100%"></canvas>
-      <div id="map-canvas-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:var(--font-mono);font-size:12px;color:var(--muted);background:rgba(6,9,16,.85);transition:opacity .4s">
-        <div style="width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div>
-        <span id="map-overlay-text" style="color:var(--text);letter-spacing:1px">WAITING FOR /map</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap">
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">ZOOM</span>
-      <input type="range" id="map-zoom" min="0.5" max="8" step="0.1" value="2" style="width:100px;accent-color:var(--accent)" oninput="redrawMap()">
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent)" id="map-zoom-label">2.0×</span>
-      <button class="btn-sm" onclick="resetMapView()" style="margin-left:4px">RESET VIEW</button>
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:auto" id="map-size-label">-- × -- cells</span>
-    </div>
-  </div>
-
-  <!-- RIGHT COLUMN -->
-  <div class="right-col">
-
-    <!-- ODOMETRY -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">Odometry</span>
-        <span class="panel-badge">/odom</span>
-      </div>
-      <div class="odom-grid">
-        <div class="odom-cell"><div class="odom-label">X (m)</div><div class="odom-value" id="odomX">--</div></div>
-        <div class="odom-cell"><div class="odom-label">Y (m)</div><div class="odom-value" id="odomY">--</div></div>
-        <div class="odom-cell"><div class="odom-label">YAW (°)</div><div class="odom-value" id="odomYaw">--</div></div>
-        <div class="odom-cell"><div class="odom-label">LIN VEL (m/s)</div><div class="odom-value" id="odomLinVel">--</div></div>
-        <div class="odom-cell full"><div class="odom-label">ANG VEL (rad/s)</div><div class="odom-value small" id="odomAngVel">--</div></div>
-      </div>
-      <div class="gmapping-row">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="map-status-dot" id="map-status-dot"></div>
-          <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)" id="map-status-text">SLAM TOOLBOX — WAITING FOR ODOM</span>
-        </div>
-        <span class="panel-badge" id="odom-hz">-- Hz</span>
-      </div>
-    </div>
-
-    <!-- TELEOP -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">Teleop</span>
-        <span class="panel-badge">/cmd_vel</span>
-      </div>
-      <div class="teleop-grid" id="teleop-grid">
-        <div></div>
-        <button class="tele-btn" id="tb-fwd"
-          onmousedown="startMoving(1,0)"   onmouseup="stopMoving()" onmouseleave="stopMoving()"
-          ontouchstart="startMoving(1,0)"  ontouchend="stopMoving()">&#9650;</button>
-        <div></div>
-        <button class="tele-btn" id="tb-left"
-          onmousedown="startMoving(0,1)"   onmouseup="stopMoving()" onmouseleave="stopMoving()"
-          ontouchstart="startMoving(0,1)"  ontouchend="stopMoving()">&#9664;</button>
-        <button class="tele-btn stop" onmousedown="stopMoving()">STOP</button>
-        <button class="tele-btn" id="tb-right"
-          onmousedown="startMoving(0,-1)"  onmouseup="stopMoving()" onmouseleave="stopMoving()"
-          ontouchstart="startMoving(0,-1)" ontouchend="stopMoving()">&#9654;</button>
-        <div></div>
-        <button class="tele-btn" id="tb-back"
-          onmousedown="startMoving(-1,0)"  onmouseup="stopMoving()" onmouseleave="stopMoving()"
-          ontouchstart="startMoving(-1,0)" ontouchend="stopMoving()">&#9660;</button>
-        <div></div>
-      </div>
-      <div class="teleop-footer">
-        <div class="speed-row" style="flex:1">
-          <span>LIN</span>
-          <input type="range" id="lin-speed" min="0.05" max="0.5" step="0.05" value="0.2" oninput="updateSpeedLabel()">
-          <span class="speed-val" id="lin-speed-val">0.20</span>
-        </div>
-        <div class="speed-row" style="flex:1;margin-left:12px">
-          <span>ANG</span>
-          <input type="range" id="ang-speed" min="0.1" max="1.5" step="0.1" value="0.5" oninput="updateSpeedLabel()">
-          <span class="speed-val" id="ang-speed-val">0.50</span>
-        </div>
-      </div>
-      <div class="teleop-footer" style="padding-top:0">
-        <label><input type="checkbox" id="arrow-keys-cb" onchange="toggleArrowKeys()"> ARROW KEYS</label>
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)" id="teleop-state">READY</span>
-      </div>
-    </div>
-
-    <!-- CONNECTION CONFIG -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">ROS Connection</span>
-        <span class="panel-badge">ROSBridge</span>
-      </div>
-      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
-        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px">ROSBRIDGE URL</div>
-        <div style="display:flex;gap:8px">
-          <input id="ros-url-input" type="text" value="ws://localhost:9090"
-            style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;border-radius:2px"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          <button class="btn-sm primary" onclick="reconnectROS()">CONNECT</button>
-        </div>
-        <p style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">
-          Start bridge: <span style="color:var(--accent)">ros2 launch rosbridge_server rosbridge_websocket_launch.xml</span>
-        </p>
-      </div>
-    </div>
-
-  </div><!-- /.right-col -->
-</div><!-- /.main-grid -->
-</div><!-- /#page-nav -->
-
-
-<!-- ══════════════ PAGE: CAMERA ══════════════ -->
-<div class="page" id="page-cam">
-  <div class="camera-page-inner">
+    <!-- LEFT — camera feed -->
     <div class="cam-panel">
       <div class="panel-header">
-        <span class="panel-title">RGB Camera</span>
+        <span class="panel-title">Camera</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="cam-status-badge" id="cam-status-badge">NO FEED</span>
           <span class="panel-badge">web_video_server · MJPEG</span>
         </div>
       </div>
-      <!-- MJPEG stream from web_video_server; no WebRTC needed -->
-      <img id="cam-img" alt="Camera feed" src="" crossorigin="anonymous"
-           onload="onCamLoad()" onerror="onCamError()">
-      <div style="padding:6px 16px 2px;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px" id="cam-topic-label">
-        /camera/image_raw
+      <div class="cam-img-container">
+        <img id="cam-img" alt="Camera feed" src="" crossorigin="anonymous"
+             onload="onCamLoad()" onerror="onCamError()">
+      </div>
+      <div style="padding:4px 16px 0;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;flex-shrink:0" id="cam-topic-label">
+        /gazebo/overhead
       </div>
       <div class="cam-controls">
         <input class="cam-url-input" id="cam-url-input" type="text"
-          value="http://localhost:8080/stream?topic=/camera/image_raw"
-          placeholder="http://localhost:8080/stream?topic=/camera/image_raw">
+          value="http://localhost:8080/stream?topic=/gazebo/overhead"
+          placeholder="http://localhost:8080/stream?topic=/gazebo/overhead">
         <button class="btn-sm primary" onclick="applyCamera()">APPLY</button>
         <button class="btn-sm" onclick="stopCamera()">STOP</button>
       </div>
-      <div style="padding:6px 16px 12px;font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">
-        Requires: <span style="color:var(--accent)">rosrun web_video_server web_video_server</span> &nbsp;·&nbsp;
-        Append <span style="color:var(--warn)">&amp;quality=70&amp;width=640</span> to reduce bandwidth.
+      <div class="cam-footer">
+        Requires: <span style="color:var(--accent)">ros2 run web_video_server web_video_server</span>
+        &nbsp;·&nbsp; Append <span style="color:var(--warn)">&amp;quality=70&amp;width=640</span> to reduce bandwidth.
       </div>
     </div>
-  </div>
-</div>
+
+    <!-- RIGHT — odometry + teleop + connection -->
+    <div class="right-col">
+
+      <!-- ODOMETRY -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Odometry</span>
+          <span class="panel-badge">/odom</span>
+        </div>
+        <div class="odom-grid">
+          <div class="odom-cell"><div class="odom-label">X (m)</div><div class="odom-value" id="odomX">--</div></div>
+          <div class="odom-cell"><div class="odom-label">Y (m)</div><div class="odom-value" id="odomY">--</div></div>
+          <div class="odom-cell"><div class="odom-label">YAW (°)</div><div class="odom-value" id="odomYaw">--</div></div>
+          <div class="odom-cell"><div class="odom-label">LIN VEL (m/s)</div><div class="odom-value" id="odomLinVel">--</div></div>
+          <div class="odom-cell full"><div class="odom-label">ANG VEL (rad/s)</div><div class="odom-value small" id="odomAngVel">--</div></div>
+        </div>
+        <div class="slam-row">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="map-status-dot" id="map-status-dot"></div>
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)" id="map-status-text">SLAM TOOLBOX — WAITING FOR ODOM</span>
+          </div>
+          <span class="panel-badge" id="odom-hz">-- Hz</span>
+        </div>
+      </div>
+
+      <!-- TELEOP -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Teleop</span>
+          <span class="panel-badge">/cmd_vel</span>
+        </div>
+        <div class="teleop-grid">
+          <div></div>
+          <button class="tele-btn"
+            onmousedown="startMoving(1,0)"   onmouseup="stopMoving()" onmouseleave="stopMoving()"
+            ontouchstart="startMoving(1,0)"  ontouchend="stopMoving()">&#9650;</button>
+          <div></div>
+          <button class="tele-btn"
+            onmousedown="startMoving(0,1)"   onmouseup="stopMoving()" onmouseleave="stopMoving()"
+            ontouchstart="startMoving(0,1)"  ontouchend="stopMoving()">&#9664;</button>
+          <button class="tele-btn stop" onmousedown="stopMoving()">STOP</button>
+          <button class="tele-btn"
+            onmousedown="startMoving(0,-1)"  onmouseup="stopMoving()" onmouseleave="stopMoving()"
+            ontouchstart="startMoving(0,-1)" ontouchend="stopMoving()">&#9654;</button>
+          <div></div>
+          <button class="tele-btn"
+            onmousedown="startMoving(-1,0)"  onmouseup="stopMoving()" onmouseleave="stopMoving()"
+            ontouchstart="startMoving(-1,0)" ontouchend="stopMoving()">&#9660;</button>
+          <div></div>
+        </div>
+        <div class="teleop-footer">
+          <div class="speed-row" style="flex:1">
+            <span>LIN</span>
+            <input type="range" id="lin-speed" min="0.05" max="0.5" step="0.05" value="0.2" oninput="updateSpeedLabel()">
+            <span class="speed-val" id="lin-speed-val">0.20</span>
+          </div>
+          <div class="speed-row" style="flex:1;margin-left:12px">
+            <span>ANG</span>
+            <input type="range" id="ang-speed" min="0.1" max="1.5" step="0.1" value="0.5" oninput="updateSpeedLabel()">
+            <span class="speed-val" id="ang-speed-val">0.50</span>
+          </div>
+        </div>
+        <div class="teleop-footer" style="padding-top:0">
+          <label><input type="checkbox" id="arrow-keys-cb" onchange="toggleArrowKeys()"> ARROW KEYS</label>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">READY</span>
+        </div>
+      </div>
+
+      <!-- ROS CONNECTION -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">ROS Connection</span>
+          <span class="panel-badge">ROSBridge</span>
+        </div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px">ROSBRIDGE URL</div>
+          <div style="display:flex;gap:8px">
+            <input id="ros-url-input" type="text" value="ws://localhost:9090"
+              style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;border-radius:2px"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            <button class="btn-sm primary" onclick="reconnectROS()">CONNECT</button>
+          </div>
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6">
+            Start: <span style="color:var(--accent)">ros2 launch rosbridge_server rosbridge_websocket_launch.xml</span>
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /.right-col -->
+  </div><!-- /.nav-grid -->
+</div><!-- /#page-nav -->
 
 
 <!-- ══════════════ PAGE: LASER SCAN ══════════════ -->
 <div class="page" id="page-laser">
-  <div class="laser-page-inner">
+  <div class="laser-grid">
+
+    <!-- Canvas — fills available height -->
     <div class="laser-canvas-panel">
       <div class="panel-header">
         <span class="panel-title">LiDAR Scan</span>
@@ -336,11 +315,12 @@
           <span class="panel-badge">/scan</span>
         </div>
       </div>
-      <canvas id="laser-canvas" width="700" height="500"></canvas>
+      <canvas id="laser-canvas"></canvas>
     </div>
 
+    <!-- Sidebar -->
     <div class="laser-sidebar">
-      <!-- SCAN STATS -->
+
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Scan Stats</span></div>
         <div class="laser-stat-grid">
@@ -353,7 +333,6 @@
         </div>
       </div>
 
-      <!-- LEGEND -->
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Legend</span></div>
         <div class="laser-legend">
@@ -361,11 +340,10 @@
           <div class="legend-row"><div class="legend-dot" style="background:#ffd600"></div> Medium (30–60%)</div>
           <div class="legend-row"><div class="legend-dot" style="background:#ff6b35"></div> Close (&lt;30%)</div>
           <div class="legend-row"><div class="legend-dot" style="background:#00e5ff"></div> Robot origin</div>
-          <div class="legend-row" style="color:var(--muted);font-size:9px;margin-top:4px">Forward = UP. Rings at 1 m intervals.</div>
+          <div class="legend-row" style="color:var(--muted);font-size:9px;margin-top:4px">Forward = UP · Rings at 1 m intervals</div>
         </div>
       </div>
 
-      <!-- DISPLAY OPTIONS -->
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Display</span></div>
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
@@ -379,15 +357,16 @@
           <input type="range" id="dot-size" min="1" max="5" step="0.5" value="2" style="accent-color:var(--accent)">
         </div>
       </div>
-    </div>
-  </div>
-</div>
+
+    </div><!-- /.laser-sidebar -->
+  </div><!-- /.laser-grid -->
+</div><!-- /#page-laser -->
 
 
 <!-- ══════════════ STATUS BAR ══════════════ -->
 <div class="status-bar">
   <span>ROSBRIDGE <span id="sb-ros" style="color:var(--muted)">DISCONNECTED</span></span>
-  <span>MAP <span id="sb-vnc" style="color:var(--muted)">--</span></span>
+  <span>CAM <span id="sb-cam" style="color:var(--muted)">--</span></span>
   <span>ODOM <span id="sb-odom" style="color:var(--muted)">--</span></span>
   <span>SCAN <span id="sb-scan" style="color:var(--muted)">--</span></span>
   <span style="position:absolute;right:28px">TIME <span id="sb-time">--</span></span>
@@ -405,9 +384,7 @@ var ros = null;
 var cmdVelTopic = null;
 
 function buildRos(url) {
-  if (ros) {
-    try { ros.close(); } catch(e) {}
-  }
+  if (ros) { try { ros.close(); } catch(e) {} }
   document.getElementById('conn-url-label').textContent = url;
   ros = new ROSLIB.Ros({ url: url });
 
@@ -416,9 +393,8 @@ function buildRos(url) {
     document.getElementById('sb-ros').textContent = 'OK';
     document.getElementById('sb-ros').style.color = 'var(--success)';
     initTopics();
-    initMapCanvas();
   });
-  ros.on('error', function(e) {
+  ros.on('error', function() {
     setConnStatus('error', 'ERROR');
     document.getElementById('sb-ros').textContent = 'ERROR';
     document.getElementById('sb-ros').style.color = 'var(--accent2)';
@@ -433,14 +409,13 @@ function buildRos(url) {
   });
 }
 
-function setConnStatus(dotClass, text) {
-  document.getElementById('conn-dot').className = dotClass;
+function setConnStatus(cls, text) {
+  document.getElementById('conn-dot').className = cls;
   document.getElementById('conn-text').textContent = text;
 }
 
 function reconnectROS() {
-  var url = document.getElementById('ros-url-input').value.trim() || 'ws://localhost:9090';
-  buildRos(url);
+  buildRos(document.getElementById('ros-url-input').value.trim() || 'ws://localhost:9090');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -452,71 +427,50 @@ var _scanHzTimer = null, _scanMsgCount = 0;
 function initTopics() {
   // ── cmd_vel publisher ──
   cmdVelTopic = new ROSLIB.Topic({
-    ros: ros,
-    name: '/cmd_vel',
-    messageType: 'geometry_msgs/Twist'
+    ros: ros, name: '/cmd_vel', messageType: 'geometry_msgs/Twist'
   });
 
-  // ── Odometry subscriber ──
+  // ── Odometry ──
   var odomSub = new ROSLIB.Topic({
-    ros: ros,
-    name: '/odom',
-    messageType: 'nav_msgs/Odometry',
-    throttle_rate: 50,  // ~20 Hz cap, enough for display
-    queue_length: 1
+    ros: ros, name: '/odom', messageType: 'nav_msgs/Odometry',
+    throttle_rate: 50, queue_length: 1
   });
   odomSub.subscribe(function(msg) {
     _odomMsgCount++;
-    var p = msg.pose.pose;
+    var p    = msg.pose.pose;
     var siny = 2*(p.orientation.w*p.orientation.z + p.orientation.x*p.orientation.y);
     var cosy = 1 - 2*(p.orientation.y*p.orientation.y + p.orientation.z*p.orientation.z);
-    var yaw = Math.atan2(siny, cosy) * 180 / Math.PI;
-    var linVel = msg.twist.twist.linear.x;
-    var angVel = msg.twist.twist.angular.z;
-
-    document.getElementById('odomX').textContent = p.position.x.toFixed(3);
-    document.getElementById('odomY').textContent = p.position.y.toFixed(3);
-    document.getElementById('odomYaw').textContent = yaw.toFixed(1) + '°';
-    document.getElementById('odomLinVel').textContent = linVel.toFixed(3);
-    document.getElementById('odomAngVel').textContent = angVel.toFixed(3);
-
-    document.getElementById('sb-odom').textContent = p.position.x.toFixed(2) + ', ' + p.position.y.toFixed(2);
-    document.getElementById('sb-odom').style.color = 'var(--success)';
-    // Update robot pose for map overlay
-    _robotX   = p.position.x;
-    _robotY   = p.position.y;
-    _robotYaw = yaw * Math.PI / 180;
+    var yaw  = Math.atan2(siny, cosy) * 180 / Math.PI;
+    document.getElementById('odomX').textContent      = p.position.x.toFixed(3);
+    document.getElementById('odomY').textContent      = p.position.y.toFixed(3);
+    document.getElementById('odomYaw').textContent    = yaw.toFixed(1) + '°';
+    document.getElementById('odomLinVel').textContent = msg.twist.twist.linear.x.toFixed(3);
+    document.getElementById('odomAngVel').textContent = msg.twist.twist.angular.z.toFixed(3);
+    document.getElementById('sb-odom').textContent    = p.position.x.toFixed(2) + ', ' + p.position.y.toFixed(2);
+    document.getElementById('sb-odom').style.color    = 'var(--success)';
     setMapStatus(true, 'SLAM TOOLBOX — MAPPING');
   });
-
-  // Hz counter for odom
   if (_odomHzTimer) clearInterval(_odomHzTimer);
   _odomHzTimer = setInterval(function() {
     document.getElementById('odom-hz').textContent = _odomMsgCount + ' Hz';
     _odomMsgCount = 0;
   }, 1000);
 
-  // ── Laser scan subscriber ──
+  // ── Laser scan ──
   var scanSub = new ROSLIB.Topic({
-    ros: ros,
-    name: '/scan',
-    messageType: 'sensor_msgs/LaserScan',
-    throttle_rate: 80,  // ~12 Hz for canvas
-    queue_length: 1
+    ros: ros, name: '/scan', messageType: 'sensor_msgs/LaserScan',
+    throttle_rate: 80, queue_length: 1
   });
   scanSub.subscribe(function(msg) {
     _scanMsgCount++;
     drawScan(msg);
     updateScanStats(msg);
-    var badge = document.getElementById('laser-status-badge');
-    badge.textContent = 'LIVE';
-    badge.className = 'cam-status-badge live';
-    document.getElementById('sb-scan').textContent = 'LIVE';
-    document.getElementById('sb-scan').style.color = 'var(--success)';
-    document.getElementById('laser-live-badge').className = 'tab-live-badge visible';
+    document.getElementById('laser-status-badge').textContent  = 'LIVE';
+    document.getElementById('laser-status-badge').className    = 'cam-status-badge live';
+    document.getElementById('sb-scan').textContent             = 'LIVE';
+    document.getElementById('sb-scan').style.color             = 'var(--success)';
+    document.getElementById('laser-live-badge').className      = 'tab-live-badge visible';
   });
-
-  // Hz counter for scan
   if (_scanHzTimer) clearInterval(_scanHzTimer);
   _scanHzTimer = setInterval(function() {
     document.getElementById('ls-hz').textContent = _scanMsgCount;
@@ -531,8 +485,8 @@ var teleopInterval = null;
 var arrowKeysEnabled = false;
 var keysDown = {};
 
-function linSpeed()  { return parseFloat(document.getElementById('lin-speed').value); }
-function angSpeed()  { return parseFloat(document.getElementById('ang-speed').value); }
+function linSpeed() { return parseFloat(document.getElementById('lin-speed').value); }
+function angSpeed() { return parseFloat(document.getElementById('ang-speed').value); }
 
 function updateSpeedLabel() {
   document.getElementById('lin-speed-val').textContent = linSpeed().toFixed(2);
@@ -541,44 +495,33 @@ function updateSpeedLabel() {
 
 function startMoving(linDir, angDir) {
   if (teleopInterval) clearInterval(teleopInterval);
-  var linV = linDir * linSpeed();
-  var angV = angDir * angSpeed();
+  var linV = linDir * linSpeed(), angV = angDir * angSpeed();
   teleopInterval = setInterval(function() {
     if (!cmdVelTopic) return;
     cmdVelTopic.publish(new ROSLIB.Message({
-      linear: { x: linV, y: 0, z: 0 },
-      angular: { x: 0, y: 0, z: angV }
+      linear: { x: linV, y: 0, z: 0 }, angular: { x: 0, y: 0, z: angV }
     }));
   }, 50);
 }
 
 function stopMoving() {
   if (teleopInterval) { clearInterval(teleopInterval); teleopInterval = null; }
-  if (cmdVelTopic) {
-    cmdVelTopic.publish(new ROSLIB.Message({
-      linear: { x: 0, y: 0, z: 0 },
-      angular: { x: 0, y: 0, z: 0 }
-    }));
-  }
+  if (cmdVelTopic) cmdVelTopic.publish(new ROSLIB.Message({
+    linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 }
+  }));
 }
 
 document.addEventListener('mouseup', stopMoving);
 document.addEventListener('touchend', stopMoving);
-
-function toggleArrowKeys() {
-  arrowKeysEnabled = document.getElementById('arrow-keys-cb').checked;
-}
-
+function toggleArrowKeys() { arrowKeysEnabled = document.getElementById('arrow-keys-cb').checked; }
 document.addEventListener('keydown', function(e) {
-  if (!arrowKeysEnabled) return;
-  if (keysDown[e.key]) return;
-  keysDown[e.key] = true;
-  // Don't override if focus is in an input
+  if (!arrowKeysEnabled || keysDown[e.key]) return;
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-  if      (e.key==='ArrowUp')    { e.preventDefault(); startMoving(1, 0); }
-  else if (e.key==='ArrowDown')  { e.preventDefault(); startMoving(-1, 0); }
-  else if (e.key==='ArrowLeft')  { e.preventDefault(); startMoving(0, 1); }
-  else if (e.key==='ArrowRight') { e.preventDefault(); startMoving(0, -1); }
+  keysDown[e.key] = true;
+  if      (e.key==='ArrowUp')    { e.preventDefault(); startMoving(1,0); }
+  else if (e.key==='ArrowDown')  { e.preventDefault(); startMoving(-1,0); }
+  else if (e.key==='ArrowLeft')  { e.preventDefault(); startMoving(0,1); }
+  else if (e.key==='ArrowRight') { e.preventDefault(); startMoving(0,-1); }
   else if (e.key===' ')          { e.preventDefault(); stopMoving(); }
 });
 document.addEventListener('keyup', function(e) {
@@ -595,143 +538,109 @@ var _lastScanMsg = null;
 function drawScan(msg) {
   _lastScanMsg = msg;
   var canvas = document.getElementById('laser-canvas');
+  // Match canvas pixel size to its CSS rendered size
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
   var ctx = canvas.getContext('2d');
-  var W = canvas.offsetWidth; // use CSS width
-  var H = Math.round(W * 0.72);
-  canvas.width  = W;
-  canvas.height = H;
-
+  var W = canvas.width, H = canvas.height;
   var cx = W / 2, cy = H / 2;
+
   var maxRange = isFinite(msg.range_max) ? msg.range_max : 3.5;
-  // Scale so range_max maps to 44% of the shorter dimension
+  // Scale so range_max fits within 44% of the shorter axis
   var scale = (Math.min(W, H) * 0.44) / maxRange;
 
   var trails = document.getElementById('scan-trails').checked;
   var fill   = document.getElementById('scan-fill').checked;
   var dotR   = parseFloat(document.getElementById('dot-size').value);
 
-  // Background (with optional trail blending)
-  if (trails) {
-    ctx.fillStyle = 'rgba(6,9,16,0.35)';
-  } else {
-    ctx.fillStyle = '#060910';
-  }
+  // Background
+  ctx.fillStyle = trails ? 'rgba(6,9,16,0.35)' : '#060910';
   ctx.fillRect(0, 0, W, H);
 
-  // Range rings + labels
-  var ringStep = 1.0; // 1 m rings
-  for (var r = ringStep; r <= maxRange + 0.01; r += ringStep) {
-    var rPx = r * scale;
+  // Range rings
+  for (var r = 1; r <= maxRange + 0.01; r++) {
     ctx.beginPath();
-    ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(0,229,255,0.09)';
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fillStyle = 'rgba(0,229,255,0.28)';
-    ctx.font = '9px "Share Tech Mono", monospace';
-    ctx.fillText(r.toFixed(0) + 'm', cx + rPx + 3, cy - 2);
+    ctx.font = '9px "Share Tech Mono",monospace';
+    ctx.fillText(r + 'm', cx + r * scale + 3, cy - 2);
   }
 
-  // Forward direction tick
+  // Forward tick
   ctx.beginPath();
   ctx.moveTo(cx, cy - maxRange * scale);
   ctx.lineTo(cx, cy - maxRange * scale - 10);
-  ctx.strokeStyle = 'rgba(0,229,255,0.3)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,229,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
   ctx.fillStyle = 'rgba(0,229,255,0.4)';
-  ctx.font = '9px "Share Tech Mono", monospace';
+  ctx.font = '9px "Share Tech Mono",monospace';
   ctx.fillText('FWD', cx + 3, cy - maxRange * scale - 2);
 
-  var ranges = msg.ranges;
-  var amin   = msg.angle_min;
-  var ainc   = msg.angle_increment;
-  var rmin   = msg.range_min;
+  var ranges = msg.ranges, amin = msg.angle_min, ainc = msg.angle_increment, rmin = msg.range_min;
 
-  // Polygon fill mode
+  // Polygon fill
   if (fill) {
     ctx.beginPath();
-    var firstPoint = true;
+    var first = true;
     for (var i = 0; i < ranges.length; i++) {
-      var range = ranges[i];
-      if (!isFinite(range) || range < rmin || range > maxRange) continue;
-      var angle = amin + i * ainc;
-      var px = cx - Math.sin(angle) * range * scale;   // negated: ROS y=left → canvas x=right
-      var py = cy - Math.cos(angle) * range * scale;   // negate cos for canvas y-down
-      if (firstPoint) { ctx.moveTo(px, py); firstPoint = false; }
-      else { ctx.lineTo(px, py); }
+      var rng = ranges[i];
+      if (!isFinite(rng) || rng < rmin || rng > maxRange) continue;
+      var ang = amin + i * ainc;
+      var px = cx - Math.sin(ang) * rng * scale;
+      var py = cy - Math.cos(ang) * rng * scale;
+      if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
     }
     ctx.closePath();
-    ctx.fillStyle = 'rgba(0,229,255,0.05)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,229,255,0.2)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,229,255,0.05)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,229,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
   }
 
   // Scan points
   for (var i = 0; i < ranges.length; i++) {
-    var range = ranges[i];
-    if (!isFinite(range) || range < rmin || range > maxRange) continue;
-    var angle = amin + i * ainc;
-    var px = cx - Math.sin(angle) * range * scale;
-    var py = cy - Math.cos(angle) * range * scale;
-
-    // Color by proportional distance
-    var t = range / maxRange;
-    var r_, g_, b_;
-    if (t > 0.6)      { r_=0;   g_=255; b_=136; }  // green  — far
-    else if (t > 0.3) { r_=255; g_=214; b_=0;   }  // yellow — medium
-    else               { r_=255; g_=107; b_=53;  }  // orange — close
-
+    var rng = ranges[i];
+    if (!isFinite(rng) || rng < rmin || rng > maxRange) continue;
+    var ang = amin + i * ainc;
+    var px = cx - Math.sin(ang) * rng * scale;
+    var py = cy - Math.cos(ang) * rng * scale;
+    var t = rng / maxRange;
+    var rc, gc, bc;
+    if (t > 0.6)      { rc=0;   gc=255; bc=136; }
+    else if (t > 0.3) { rc=255; gc=214; bc=0;   }
+    else               { rc=255; gc=107; bc=53;  }
     ctx.beginPath();
     ctx.arc(px, py, dotR, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgb(' + r_ + ',' + g_ + ',' + b_ + ')';
+    ctx.fillStyle = 'rgb('+rc+','+gc+','+bc+')';
     ctx.fill();
   }
 
-  // Robot diamond
+  // Robot marker
   ctx.beginPath();
-  ctx.moveTo(cx, cy - 9);
-  ctx.lineTo(cx + 6, cy);
-  ctx.lineTo(cx, cy + 9);
-  ctx.lineTo(cx - 6, cy);
-  ctx.closePath();
-  ctx.fillStyle = '#00e5ff';
-  ctx.fill();
-  // Forward arrow from robot
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - 9);
-  ctx.lineTo(cx, cy - 22);
-  ctx.strokeStyle = '#00e5ff';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  ctx.moveTo(cx, cy-9); ctx.lineTo(cx+6, cy); ctx.lineTo(cx, cy+9); ctx.lineTo(cx-6, cy);
+  ctx.closePath(); ctx.fillStyle = '#00e5ff'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx, cy-9); ctx.lineTo(cx, cy-22);
+  ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 2; ctx.stroke();
 }
 
 function updateScanStats(msg) {
-  var ranges = msg.ranges;
-  var valid = 0, closest = Infinity;
+  var ranges = msg.ranges, valid = 0, closest = Infinity;
   for (var i = 0; i < ranges.length; i++) {
     var r = ranges[i];
-    if (isFinite(r) && r >= msg.range_min && r <= msg.range_max) {
-      valid++;
-      if (r < closest) closest = r;
-    }
+    if (isFinite(r) && r >= msg.range_min && r <= msg.range_max) { valid++; if (r < closest) closest = r; }
   }
   document.getElementById('ls-range-max').textContent = isFinite(msg.range_max) ? msg.range_max.toFixed(2) : '--';
   document.getElementById('ls-range-min').textContent = isFinite(msg.range_min) ? msg.range_min.toFixed(2) : '--';
-  document.getElementById('ls-rays').textContent = ranges.length;
-  document.getElementById('ls-valid').textContent = valid;
+  document.getElementById('ls-rays').textContent    = msg.ranges.length;
+  document.getElementById('ls-valid').textContent   = valid;
   document.getElementById('ls-closest').textContent = isFinite(closest) ? closest.toFixed(3) : '--';
 }
 
-// Redraw canvas on resize
-window.addEventListener('resize', function() {
-  if (_lastScanMsg) drawScan(_lastScanMsg);
-});
+// Redraw on resize or tab switch
+window.addEventListener('resize', function() { if (_lastScanMsg) drawScan(_lastScanMsg); });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CAMERA (MJPEG via web_video_server)
+// CAMERA (MJPEG)
 // ─────────────────────────────────────────────────────────────────────────────
 var _camLoadOk = false;
 
@@ -739,47 +648,47 @@ function applyCamera() {
   var url = document.getElementById('cam-url-input').value.trim();
   if (!url) return;
   _camLoadOk = false;
-  var img = document.getElementById('cam-img');
-  img.src = '';
   var badge = document.getElementById('cam-status-badge');
   badge.textContent = 'CONNECTING...'; badge.className = 'cam-status-badge';
-  // Force reload by appending cache-busting param
+  var img = document.getElementById('cam-img');
+  img.src = '';
   img.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-  // Extract topic name for label
   var topicMatch = url.match(/topic=([^&]+)/);
   document.getElementById('cam-topic-label').textContent = topicMatch ? decodeURIComponent(topicMatch[1]) : url;
 }
 
 function stopCamera() {
-  var img = document.getElementById('cam-img');
-  img.src = '';
+  document.getElementById('cam-img').src = '';
   var badge = document.getElementById('cam-status-badge');
   badge.textContent = 'STOPPED'; badge.className = 'cam-status-badge';
-  document.getElementById('cam-live-badge').className = 'tab-live-badge';
+  document.getElementById('sb-cam').textContent = '--';
+  document.getElementById('sb-cam').style.color = 'var(--muted)';
 }
 
 function onCamLoad() {
-  if (_camLoadOk) return; // fires repeatedly on MJPEG
+  if (_camLoadOk) return;
   _camLoadOk = true;
   var badge = document.getElementById('cam-status-badge');
   badge.textContent = 'LIVE'; badge.className = 'cam-status-badge live';
-  document.getElementById('cam-live-badge').className = 'tab-live-badge visible';
+  document.getElementById('sb-cam').textContent = 'LIVE';
+  document.getElementById('sb-cam').style.color = 'var(--success)';
 }
 
 function onCamError() {
   var badge = document.getElementById('cam-status-badge');
   badge.textContent = 'ERROR'; badge.className = 'cam-status-badge error';
-  document.getElementById('cam-live-badge').className = 'tab-live-badge';
+  document.getElementById('sb-cam').textContent = 'ERROR';
+  document.getElementById('sb-cam').style.color = 'var(--accent2)';
   showToast('Camera stream error — is web_video_server running?', true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GMAPPING STATUS HELPER
+// SLAM STATUS
 // ─────────────────────────────────────────────────────────────────────────────
 function setMapStatus(active, text) {
   var dot  = document.getElementById('map-status-dot');
   var span = document.getElementById('map-status-text');
-  dot.className  = 'map-status-dot' + (active ? ' active' : '');
+  dot.className = 'map-status-dot' + (active ? ' active' : '');
   span.textContent = text;
   span.style.color = active ? 'var(--success)' : 'var(--muted)';
 }
@@ -792,7 +701,6 @@ function switchTab(name) {
   document.querySelectorAll('.page-tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  // Redraw laser canvas when switching to laser tab
   if (name === 'laser' && _lastScanMsg) drawScan(_lastScanMsg);
 }
 
@@ -800,14 +708,13 @@ function switchTab(name) {
 // CLOCK
 // ─────────────────────────────────────────────────────────────────────────────
 function updateClock() {
-  var now = new Date();
-  var h   = String(now.getHours()).padStart(2,'0');
-  var m   = String(now.getMinutes()).padStart(2,'0');
-  var s   = String(now.getSeconds()).padStart(2,'0');
-  document.getElementById('sb-time').textContent = h + ':' + m + ':' + s;
+  var n = new Date();
+  document.getElementById('sb-time').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' +
+    String(n.getMinutes()).padStart(2,'0') + ':' +
+    String(n.getSeconds()).padStart(2,'0');
 }
-setInterval(updateClock, 1000);
-updateClock();
+setInterval(updateClock, 1000); updateClock();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TOAST
@@ -826,224 +733,18 @@ function showToast(msg, isError) {
 // ─────────────────────────────────────────────────────────────────────────────
 buildRos('ws://localhost:9090');
 
-// Draw empty map canvas immediately
-redrawMap();
-
-// Draw empty laser canvas immediately
-(function() {
+// Draw placeholder on the laser canvas immediately
+requestAnimationFrame(function() {
   var canvas = document.getElementById('laser-canvas');
+  canvas.width  = canvas.offsetWidth  || 600;
+  canvas.height = canvas.offsetHeight || 400;
   var ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#060910';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#060910'; ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle = 'rgba(0,229,255,0.3)';
-  ctx.font = '12px "Share Tech Mono", monospace';
-  ctx.textAlign = 'center';
+  ctx.font = '12px "Share Tech Mono",monospace'; ctx.textAlign = 'center';
   ctx.fillText('AWAITING /scan', canvas.width/2, canvas.height/2);
   ctx.textAlign = 'left';
-})();
-</script>
-
-
-<!-- ══════════════ LIVE MAP CANVAS ══════════════ -->
-<script>
-// ─────────────────────────────────────────────────────────────────────────────
-// MAP CANVAS — subscribes to /map (nav_msgs/OccupancyGrid) via rosbridge
-// and renders it with the robot pose overlaid from /odom
-// ─────────────────────────────────────────────────────────────────────────────
-var _mapData      = null;   // latest OccupancyGrid message
-var _mapOffsetX   = 0;      // pan offset in pixels
-var _mapOffsetY   = 0;
-var _mapDragStart = null;
-var _robotX       = 0;      // robot world position (metres)
-var _robotY       = 0;
-var _robotYaw     = 0;
-
-function initMapCanvas() {
-  var canvas = document.getElementById('map-canvas');
-  if (!canvas) return;
-
-  // ── Subscribe to /map ──
-  var mapSub = new ROSLIB.Topic({
-    ros: ros,
-    name: '/map',
-    messageType: 'nav_msgs/OccupancyGrid',
-    throttle_rate: 2000,  // redraw at most every 2 s (map updates are slow)
-    queue_length: 1
-  });
-  mapSub.subscribe(function(msg) {
-    _mapData = msg;
-    var badge   = document.getElementById('map-canvas-badge');
-    var overlay = document.getElementById('map-canvas-overlay');
-    badge.textContent = 'LIVE';
-    badge.className   = 'cam-status-badge live';
-    overlay.style.opacity         = '0';
-    overlay.style.pointerEvents   = 'none';
-    document.getElementById('sb-vnc').textContent  = 'LIVE';
-    document.getElementById('sb-vnc').style.color  = 'var(--success)';
-    var w = msg.info.width, h = msg.info.height;
-    document.getElementById('map-size-label').textContent = w + ' × ' + h + ' cells';
-    redrawMap();
-  });
-
-  // ── Pan with mouse drag ──
-  canvas.addEventListener('mousedown', function(e) {
-    _mapDragStart = { x: e.clientX - _mapOffsetX, y: e.clientY - _mapOffsetY };
-  });
-  canvas.addEventListener('mousemove', function(e) {
-    if (!_mapDragStart) return;
-    _mapOffsetX = e.clientX - _mapDragStart.x;
-    _mapOffsetY = e.clientY - _mapDragStart.y;
-    redrawMap();
-  });
-  canvas.addEventListener('mouseup',    function() { _mapDragStart = null; });
-  canvas.addEventListener('mouseleave', function() { _mapDragStart = null; });
-
-  // ── Zoom with scroll wheel ──
-  canvas.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    var z = document.getElementById('map-zoom');
-    var v = parseFloat(z.value) - e.deltaY * 0.005;
-    z.value = Math.max(0.5, Math.min(8, v));
-    redrawMap();
-  }, { passive: false });
-
-  window.addEventListener('resize', redrawMap);
-}
-
-function redrawMap() {
-  var canvas = document.getElementById('map-canvas');
-  if (!canvas) return;
-
-  // Sync canvas pixel size to its CSS size
-  canvas.width  = canvas.offsetWidth  || 800;
-  canvas.height = canvas.offsetHeight || 500;
-  var ctx = canvas.getContext('2d');
-  var W = canvas.width, H = canvas.height;
-
-  // Background
-  ctx.fillStyle = '#060910';
-  ctx.fillRect(0, 0, W, H);
-
-  var zoom = parseFloat(document.getElementById('map-zoom').value);
-  document.getElementById('map-zoom-label').textContent = zoom.toFixed(1) + '×';
-
-  if (!_mapData) {
-    ctx.fillStyle = 'rgba(0,229,255,0.25)';
-    ctx.font = '12px "Share Tech Mono", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('WAITING FOR /map — drive the robot to build a map', W/2, H/2);
-    ctx.textAlign = 'left';
-    return;
-  }
-
-  var info    = _mapData.info;
-  var data    = _mapData.data;
-  var mapW    = info.width;
-  var mapH    = info.height;
-  var res     = info.resolution;   // metres per cell
-  var cellPx  = res * zoom * 100;  // pixels per cell (100px = 1 m at zoom 1)
-
-  // Centre the map in the canvas + apply pan offset
-  var originX = W/2 - (mapW * cellPx)/2 + _mapOffsetX;
-  var originY = H/2 - (mapH * cellPx)/2 + _mapOffsetY;
-
-  // Draw map cells
-  for (var row = 0; row < mapH; row++) {
-    for (var col = 0; col < mapW; col++) {
-      var val = data[row * mapW + col];
-      var color;
-      if      (val === -1)       color = '#1a2330';   // unknown  — dark blue-grey
-      else if (val === 0)        color = '#e8edf2';   // free     — light
-      else if (val >= 65)        color = '#1e3a5f';   // occupied — dark blue (obstacle)
-      else                       color = '#8aacc8';   // low prob — mid
-      ctx.fillStyle = color;
-      // ROS map: row 0 = bottom of map; canvas y increases downward → flip row
-      var px = originX + col * cellPx;
-      var py = originY + (mapH - 1 - row) * cellPx;
-      ctx.fillRect(px, py, cellPx + 0.5, cellPx + 0.5); // +0.5 fills gaps between cells
-    }
-  }
-
-  // Map border
-  ctx.strokeStyle = 'rgba(0,229,255,0.2)';
-  ctx.lineWidth   = 1;
-  ctx.strokeRect(originX, originY, mapW * cellPx, mapH * cellPx);
-
-  // Grid lines every 1 m
-  ctx.strokeStyle = 'rgba(0,229,255,0.06)';
-  ctx.lineWidth   = 0.5;
-  var mPerCell = res;
-  var cellsPerMetre = Math.round(1 / mPerCell);
-  for (var c = 0; c <= mapW; c += cellsPerMetre) {
-    ctx.beginPath();
-    ctx.moveTo(originX + c * cellPx, originY);
-    ctx.lineTo(originX + c * cellPx, originY + mapH * cellPx);
-    ctx.stroke();
-  }
-  for (var r = 0; r <= mapH; r += cellsPerMetre) {
-    ctx.beginPath();
-    ctx.moveTo(originX,                   originY + r * cellPx);
-    ctx.lineTo(originX + mapW * cellPx,   originY + r * cellPx);
-    ctx.stroke();
-  }
-
-  // ── Robot pose ──
-  // Convert world coords (metres) to canvas pixels
-  // Map origin is at (info.origin.position.x, info.origin.position.y) in world frame
-  var ox   = info.origin.position.x;
-  var oy   = info.origin.position.y;
-  var robCanvasX = originX + (_robotX - ox) / res * cellPx;
-  var robCanvasY = originY + (mapH - 1 - (_robotY - oy) / res) * cellPx;
-
-  // Robot body — cyan diamond
-  ctx.save();
-  ctx.translate(robCanvasX, robCanvasY);
-  ctx.rotate(-_robotYaw); // ROS yaw CCW, canvas clockwise
-  // Forward arrow
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(0, -18);
-  ctx.strokeStyle = '#00e5ff';
-  ctx.lineWidth   = 2;
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(0, -18);
-  ctx.lineTo(-5, -12);
-  ctx.moveTo(0, -18);
-  ctx.lineTo(5, -12);
-  ctx.stroke();
-  // Body
-  ctx.beginPath();
-  ctx.arc(0, 0, 7, 0, Math.PI * 2);
-  ctx.fillStyle = '#00e5ff';
-  ctx.fill();
-  ctx.restore();
-
-  // Scale bar
-  var barMetres = 1;
-  var barPx     = barMetres / res * cellPx;
-  var bx = 20, by = H - 24;
-  ctx.fillStyle    = 'rgba(0,229,255,0.15)';
-  ctx.fillRect(bx, by, barPx, 6);
-  ctx.strokeStyle  = 'rgba(0,229,255,0.6)';
-  ctx.lineWidth    = 1;
-  ctx.strokeRect(bx, by, barPx, 6);
-  ctx.fillStyle    = 'rgba(0,229,255,0.7)';
-  ctx.font         = '9px "Share Tech Mono", monospace';
-  ctx.fillText('1 m', bx + barPx + 4, by + 6);
-}
-
-function resetMapView() {
-  _mapOffsetX = 0;
-  _mapOffsetY = 0;
-  document.getElementById('map-zoom').value = '2';
-  redrawMap();
-}
-
-// Hook into odom to update robot pose for map overlay
-// (odom subscriber already exists in initTopics — we just read _robotX/Y/Yaw)
-// Patch setMapStatus to also trigger a map redraw
-var _origSetMapStatus = window.setMapStatus;
+});
 </script>
 
 </body>
