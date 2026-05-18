@@ -67,9 +67,13 @@
       padding:16px 28px;overflow:hidden;
     }
 
-    /* Left — camera panel fills available height */
+    /* Left — dual camera panels side by side */
+    .dual-cam-wrapper{
+      grid-column:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;
+      min-height:0;overflow:hidden;
+    }
     .cam-panel{
-      grid-column:1;display:flex;flex-direction:column;
+      display:flex;flex-direction:column;
       background:var(--surface);border:1px solid var(--border);border-radius:4px;
       overflow:hidden;min-height:0;
     }
@@ -77,11 +81,11 @@
       flex:1;min-height:0;background:#000;overflow:hidden;
       display:flex;align-items:center;justify-content:center;
     }
-    #cam-img{width:100%;height:100%;object-fit:contain;display:block}
-    .cam-controls{padding:8px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
-    .cam-url-input{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 10px;border-radius:2px}
+    .cam-img{width:100%;height:100%;object-fit:contain;display:block}
+    .cam-controls{padding:6px 10px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+    .cam-url-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:4px 8px;border-radius:2px}
     .cam-url-input:focus{outline:none;border-color:var(--accent)}
-    .cam-footer{padding:5px 16px 8px;font-family:var(--font-mono);font-size:10px;color:var(--muted);line-height:1.6;flex-shrink:0}
+    .cam-footer{padding:4px 10px 6px;font-family:var(--font-mono);font-size:9px;color:var(--muted);line-height:1.5;flex-shrink:0}
 
     /* Right — scrollable column */
     .right-col{
@@ -180,34 +184,50 @@
 <div class="page active" id="page-nav">
   <div class="nav-grid">
 
-    <!-- LEFT — camera feed -->
-    <div class="cam-panel">
-      <div class="panel-header">
-        <span class="panel-title">Camera</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="cam-status-badge" id="cam-status-badge">NO FEED</span>
-          <span class="panel-badge">web_video_server · MJPEG</span>
+    <!-- LEFT — dual camera feeds side by side -->
+    <div class="dual-cam-wrapper">
+
+      <!-- CAM 1: Overhead (Gazebo bird's eye) -->
+      <div class="cam-panel">
+        <div class="panel-header" style="padding:8px 12px">
+          <span class="panel-title" style="font-size:11px">Overhead</span>
+          <span class="cam-status-badge" id="cam-status-badge-1">NO FEED</span>
+        </div>
+        <div class="cam-img-container">
+          <img class="cam-img" id="cam-img-1" alt="Overhead" src="" crossorigin="anonymous"
+               onload="onCamLoad(1)" onerror="onCamError(1)">
+        </div>
+        <div style="padding:3px 10px 0;font-family:var(--font-mono);font-size:9px;color:var(--muted);flex-shrink:0" id="cam-topic-label-1">/gazebo/overhead</div>
+        <div class="cam-controls">
+          <input class="cam-url-input" id="cam-url-input-1" type="text"
+            value="http://localhost:8080/stream?topic=/gazebo/overhead"
+            placeholder="http://localhost:8080/stream?topic=/gazebo/overhead">
+          <button class="btn-sm primary" style="padding:4px 8px;font-size:10px" onclick="applyCamera(1)">▶</button>
+          <button class="btn-sm" style="padding:4px 8px;font-size:10px" onclick="stopCamera(1)">■</button>
         </div>
       </div>
-      <div class="cam-img-container">
-        <img id="cam-img" alt="Camera feed" src="" crossorigin="anonymous"
-             onload="onCamLoad()" onerror="onCamError()">
+
+      <!-- CAM 2: Waffle Pi onboard RGB camera -->
+      <div class="cam-panel">
+        <div class="panel-header" style="padding:8px 12px">
+          <span class="panel-title" style="font-size:11px">Robot Camera</span>
+          <span class="cam-status-badge" id="cam-status-badge-2">NO FEED</span>
+        </div>
+        <div class="cam-img-container">
+          <img class="cam-img" id="cam-img-2" alt="Robot camera" src="" crossorigin="anonymous"
+               onload="onCamLoad(2)" onerror="onCamError(2)">
+        </div>
+        <div style="padding:3px 10px 0;font-family:var(--font-mono);font-size:9px;color:var(--muted);flex-shrink:0" id="cam-topic-label-2">/camera/image_raw</div>
+        <div class="cam-controls">
+          <input class="cam-url-input" id="cam-url-input-2" type="text"
+            value="http://localhost:8080/stream?topic=/camera/image_raw"
+            placeholder="http://localhost:8080/stream?topic=/camera/image_raw">
+          <button class="btn-sm primary" style="padding:4px 8px;font-size:10px" onclick="applyCamera(2)">▶</button>
+          <button class="btn-sm" style="padding:4px 8px;font-size:10px" onclick="stopCamera(2)">■</button>
+        </div>
       </div>
-      <div style="padding:4px 16px 0;font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;flex-shrink:0" id="cam-topic-label">
-        /gazebo/overhead
-      </div>
-      <div class="cam-controls">
-        <input class="cam-url-input" id="cam-url-input" type="text"
-          value="http://localhost:8080/stream?topic=/gazebo/overhead"
-          placeholder="http://localhost:8080/stream?topic=/gazebo/overhead">
-        <button class="btn-sm primary" onclick="applyCamera()">APPLY</button>
-        <button class="btn-sm" onclick="stopCamera()">STOP</button>
-      </div>
-      <div class="cam-footer">
-        Requires: <span style="color:var(--accent)">ros2 run web_video_server web_video_server</span>
-        &nbsp;·&nbsp; Append <span style="color:var(--warn)">&amp;quality=70&amp;width=640</span> to reduce bandwidth.
-      </div>
-    </div>
+
+    </div><!-- /.dual-cam-wrapper -->
 
     <!-- RIGHT — odometry + teleop + connection -->
     <div class="right-col">
@@ -366,7 +386,8 @@
 <!-- ══════════════ STATUS BAR ══════════════ -->
 <div class="status-bar">
   <span>ROSBRIDGE <span id="sb-ros" style="color:var(--muted)">DISCONNECTED</span></span>
-  <span>CAM <span id="sb-cam" style="color:var(--muted)">--</span></span>
+  <span>CAM1 <span id="sb-cam" style="color:var(--muted)">--</span></span>
+  <span>CAM2 <span id="sb-cam2" style="color:var(--muted)">--</span></span>
   <span>ODOM <span id="sb-odom" style="color:var(--muted)">--</span></span>
   <span>SCAN <span id="sb-scan" style="color:var(--muted)">--</span></span>
   <span style="position:absolute;right:28px">TIME <span id="sb-time">--</span></span>
@@ -640,46 +661,48 @@ function updateScanStats(msg) {
 window.addEventListener('resize', function() { if (_lastScanMsg) drawScan(_lastScanMsg); });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CAMERA (MJPEG)
+// CAMERA (MJPEG) — indexed: n=1 overhead, n=2 robot
 // ─────────────────────────────────────────────────────────────────────────────
-var _camLoadOk = false;
+var _camLoadOk = { 1: false, 2: false };
+var _sbCamIds  = { 1: 'sb-cam', 2: 'sb-cam2' };
 
-function applyCamera() {
-  var url = document.getElementById('cam-url-input').value.trim();
+function applyCamera(n) {
+  var url = document.getElementById('cam-url-input-' + n).value.trim();
   if (!url) return;
-  _camLoadOk = false;
-  var badge = document.getElementById('cam-status-badge');
+  _camLoadOk[n] = false;
+  var badge = document.getElementById('cam-status-badge-' + n);
   badge.textContent = 'CONNECTING...'; badge.className = 'cam-status-badge';
-  var img = document.getElementById('cam-img');
+  var img = document.getElementById('cam-img-' + n);
   img.src = '';
   img.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
   var topicMatch = url.match(/topic=([^&]+)/);
-  document.getElementById('cam-topic-label').textContent = topicMatch ? decodeURIComponent(topicMatch[1]) : url;
+  document.getElementById('cam-topic-label-' + n).textContent =
+    topicMatch ? decodeURIComponent(topicMatch[1]) : url;
 }
 
-function stopCamera() {
-  document.getElementById('cam-img').src = '';
-  var badge = document.getElementById('cam-status-badge');
+function stopCamera(n) {
+  document.getElementById('cam-img-' + n).src = '';
+  var badge = document.getElementById('cam-status-badge-' + n);
   badge.textContent = 'STOPPED'; badge.className = 'cam-status-badge';
-  document.getElementById('sb-cam').textContent = '--';
-  document.getElementById('sb-cam').style.color = 'var(--muted)';
+  document.getElementById(_sbCamIds[n]).textContent = '--';
+  document.getElementById(_sbCamIds[n]).style.color = 'var(--muted)';
 }
 
-function onCamLoad() {
-  if (_camLoadOk) return;
-  _camLoadOk = true;
-  var badge = document.getElementById('cam-status-badge');
+function onCamLoad(n) {
+  if (_camLoadOk[n]) return;
+  _camLoadOk[n] = true;
+  var badge = document.getElementById('cam-status-badge-' + n);
   badge.textContent = 'LIVE'; badge.className = 'cam-status-badge live';
-  document.getElementById('sb-cam').textContent = 'LIVE';
-  document.getElementById('sb-cam').style.color = 'var(--success)';
+  document.getElementById(_sbCamIds[n]).textContent = 'LIVE';
+  document.getElementById(_sbCamIds[n]).style.color = 'var(--success)';
 }
 
-function onCamError() {
-  var badge = document.getElementById('cam-status-badge');
+function onCamError(n) {
+  var badge = document.getElementById('cam-status-badge-' + n);
   badge.textContent = 'ERROR'; badge.className = 'cam-status-badge error';
-  document.getElementById('sb-cam').textContent = 'ERROR';
-  document.getElementById('sb-cam').style.color = 'var(--accent2)';
-  showToast('Camera stream error — is web_video_server running?', true);
+  document.getElementById(_sbCamIds[n]).textContent = 'ERR';
+  document.getElementById(_sbCamIds[n]).style.color = 'var(--accent2)';
+  showToast('Camera ' + n + ' error — is web_video_server running?', true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
