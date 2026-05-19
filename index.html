@@ -227,6 +227,12 @@
         </div>
       </div>
 
+      <!-- Shared footer — spans both camera panels -->
+      <div style="grid-column:1/-1;padding:5px 12px;font-family:var(--font-mono);font-size:9px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;flex-shrink:0">
+        Requires: <span style="color:var(--accent)">ros2 run web_video_server web_video_server</span>
+        &nbsp;·&nbsp; Append <span style="color:var(--warn)">&amp;quality=70&amp;width=640</span> to reduce bandwidth.
+      </div>
+
     </div><!-- /.dual-cam-wrapper -->
 
     <!-- RIGHT — odometry + teleop + connection -->
