@@ -184,56 +184,61 @@
 <div class="page active" id="page-nav">
   <div class="nav-grid">
 
-    <!-- LEFT — dual camera feeds side by side -->
-    <div class="dual-cam-wrapper">
+    <!-- LEFT — dual camera feeds + shared footer -->
+    <div style="grid-column:1;display:flex;flex-direction:column;min-height:0;gap:0">
 
-      <!-- CAM 1: Overhead (Gazebo bird's eye) -->
-      <div class="cam-panel">
-        <div class="panel-header" style="padding:8px 12px">
-          <span class="panel-title" style="font-size:11px">Overhead</span>
-          <span class="cam-status-badge" id="cam-status-badge-1">NO FEED</span>
-        </div>
-        <div class="cam-img-container">
-          <img class="cam-img" id="cam-img-1" alt="Overhead" src="" crossorigin="anonymous"
-               onload="onCamLoad(1)" onerror="onCamError(1)">
-        </div>
-        <div style="padding:3px 10px 0;font-family:var(--font-mono);font-size:9px;color:var(--muted);flex-shrink:0" id="cam-topic-label-1">/gazebo/overhead</div>
-        <div class="cam-controls">
-          <input class="cam-url-input" id="cam-url-input-1" type="text"
-            value="http://localhost:8080/stream?topic=/gazebo/overhead"
-            placeholder="http://localhost:8080/stream?topic=/gazebo/overhead">
-          <button class="btn-sm primary" style="padding:4px 8px;font-size:10px" onclick="applyCamera(1)">▶</button>
-          <button class="btn-sm" style="padding:4px 8px;font-size:10px" onclick="stopCamera(1)">■</button>
-        </div>
-      </div>
+      <!-- Two camera panels side by side -->
+      <div class="dual-cam-wrapper" style="flex:1;min-height:0">
 
-      <!-- CAM 2: Waffle Pi onboard RGB camera -->
-      <div class="cam-panel">
-        <div class="panel-header" style="padding:8px 12px">
-          <span class="panel-title" style="font-size:11px">Robot Camera</span>
-          <span class="cam-status-badge" id="cam-status-badge-2">NO FEED</span>
+        <!-- CAM 1: Overhead (Gazebo bird's eye) -->
+        <div class="cam-panel">
+          <div class="panel-header" style="padding:8px 12px">
+            <span class="panel-title" style="font-size:11px">Overhead</span>
+            <span class="cam-status-badge" id="cam-status-badge-1">NO FEED</span>
+          </div>
+          <div class="cam-img-container">
+            <img class="cam-img" id="cam-img-1" alt="Overhead" src="" crossorigin="anonymous"
+                 onload="onCamLoad(1)" onerror="onCamError(1)">
+          </div>
+          <div style="padding:3px 10px 0;font-family:var(--font-mono);font-size:9px;color:var(--muted);flex-shrink:0" id="cam-topic-label-1">/gazebo/overhead</div>
+          <div class="cam-controls">
+            <input class="cam-url-input" id="cam-url-input-1" type="text"
+              value="http://localhost:8080/stream?topic=/gazebo/overhead"
+              placeholder="http://localhost:8080/stream?topic=/gazebo/overhead">
+            <button class="btn-sm primary" style="padding:4px 8px;font-size:10px" onclick="applyCamera(1)">▶</button>
+            <button class="btn-sm" style="padding:4px 8px;font-size:10px" onclick="stopCamera(1)">■</button>
+          </div>
         </div>
-        <div class="cam-img-container">
-          <img class="cam-img" id="cam-img-2" alt="Robot camera" src="" crossorigin="anonymous"
-               onload="onCamLoad(2)" onerror="onCamError(2)">
-        </div>
-        <div style="padding:3px 10px 0;font-family:var(--font-mono);font-size:9px;color:var(--muted);flex-shrink:0" id="cam-topic-label-2">/camera/image_raw</div>
-        <div class="cam-controls">
-          <input class="cam-url-input" id="cam-url-input-2" type="text"
-            value="http://localhost:8080/stream?topic=/camera/image_raw"
-            placeholder="http://localhost:8080/stream?topic=/camera/image_raw">
-          <button class="btn-sm primary" style="padding:4px 8px;font-size:10px" onclick="applyCamera(2)">▶</button>
-          <button class="btn-sm" style="padding:4px 8px;font-size:10px" onclick="stopCamera(2)">■</button>
-        </div>
-      </div>
 
-      <!-- Shared footer — spans both camera panels -->
-      <div style="grid-column:1/-1;padding:5px 12px;font-family:var(--font-mono);font-size:9px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;flex-shrink:0">
+        <!-- CAM 2: Waffle Pi onboard RGB camera -->
+        <div class="cam-panel">
+          <div class="panel-header" style="padding:8px 12px">
+            <span class="panel-title" style="font-size:11px">Robot Camera</span>
+            <span class="cam-status-badge" id="cam-status-badge-2">NO FEED</span>
+          </div>
+          <div class="cam-img-container">
+            <img class="cam-img" id="cam-img-2" alt="Robot camera" src="" crossorigin="anonymous"
+                 onload="onCamLoad(2)" onerror="onCamError(2)">
+          </div>
+          <div style="padding:3px 10px 0;font-family:var(--font-mono);font-size:9px;color:var(--muted);flex-shrink:0" id="cam-topic-label-2">/camera/image_raw</div>
+          <div class="cam-controls">
+            <input class="cam-url-input" id="cam-url-input-2" type="text"
+              value="http://localhost:8080/stream?topic=/camera/image_raw"
+              placeholder="http://localhost:8080/stream?topic=/camera/image_raw">
+            <button class="btn-sm primary" style="padding:4px 8px;font-size:10px" onclick="applyCamera(2)">▶</button>
+            <button class="btn-sm" style="padding:4px 8px;font-size:10px" onclick="stopCamera(2)">■</button>
+          </div>
+        </div>
+
+      </div><!-- /.dual-cam-wrapper -->
+
+      <!-- Shared footer — thin bar below both cameras -->
+      <div style="padding:5px 12px;font-family:var(--font-mono);font-size:9px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;flex-shrink:0">
         Requires: <span style="color:var(--accent)">ros2 run web_video_server web_video_server</span>
         &nbsp;·&nbsp; Append <span style="color:var(--warn)">&amp;quality=70&amp;width=640</span> to reduce bandwidth.
       </div>
 
-    </div><!-- /.dual-cam-wrapper -->
+    </div><!-- /.left col -->
 
     <!-- RIGHT — odometry + teleop + connection -->
     <div class="right-col">
