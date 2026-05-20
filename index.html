@@ -343,7 +343,7 @@
         <span class="panel-title">SLAM Map</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="cam-status-badge" id="laser-status-badge">WAITING</span>
-          <span class="panel-badge">/map · /scan · /odom</span>
+          <span class="panel-badge">/map · /scan · /pose</span>
         </div>
       </div>
       <canvas id="laser-canvas" style="cursor:grab"></canvas>
@@ -530,8 +530,25 @@ function reconnectROS() {
 var _odomHzTimer = null, _odomMsgCount = 0;
 var _scanHzTimer = null, _scanMsgCount = 0;
 var _mapHzTimer  = null, _mapMsgCount  = 0;
-// Robot pose (updated from odom, used by map renderer)
+// Robot pose in MAP frame — updated from /pose (slam_toolbox) or /amcl_pose (Nav2)
+// Used by the canvas renderer. Separate from /odom which is odom-frame only.
 var _robotX = 0, _robotY = 0, _robotYaw = 0;
+var _poseSource = 'odom';  // 'pose', 'amcl', or 'odom' (fallback)
+
+// Shared helper — updates map-frame robot pose and records path history.
+// Called from /pose (slam_toolbox), /amcl_pose (Nav2), or /odom (fallback).
+function _updateRobotPose(x, y, yaw) {
+  _robotX   = x;
+  _robotY   = y;
+  _robotYaw = yaw;
+  var dx = x - (_lastPathX === null ? x + 999 : _lastPathX);
+  var dy = y - (_lastPathY === null ? y + 999 : _lastPathY);
+  if (_lastPathX === null || Math.sqrt(dx*dx + dy*dy) >= PATH_MIN_DIST) {
+    _pathHistory.push({ x: x, y: y });
+    if (_pathHistory.length > PATH_MAX_LEN) _pathHistory.shift();
+    _lastPathX = x; _lastPathY = y;
+  }
+}
 
 function initTopics() {
   // ── cmd_vel publisher ──
@@ -557,16 +574,9 @@ function initTopics() {
     document.getElementById('odomAngVel').textContent = msg.twist.twist.angular.z.toFixed(3);
     document.getElementById('sb-odom').textContent    = p.position.x.toFixed(2) + ', ' + p.position.y.toFixed(2);
     document.getElementById('sb-odom').style.color    = 'var(--success)';
-    _robotX   = p.position.x;
-    _robotY   = p.position.y;
-    _robotYaw = Math.atan2(siny, cosy);
-    // A — record path history
-    var dx = _robotX - (_lastPathX === null ? _robotX + 999 : _lastPathX);
-    var dy = _robotY - (_lastPathY === null ? _robotY + 999 : _lastPathY);
-    if (_lastPathX === null || Math.sqrt(dx*dx + dy*dy) >= PATH_MIN_DIST) {
-      _pathHistory.push({ x: _robotX, y: _robotY });
-      if (_pathHistory.length > PATH_MAX_LEN) _pathHistory.shift();
-      _lastPathX = _robotX; _lastPathY = _robotY;
+    // If no map-frame pose source available yet, fall back to odom for canvas
+    if (_poseSource === 'odom') {
+      _updateRobotPose(p.position.x, p.position.y, Math.atan2(siny, cosy));
     }
     setMapStatus(true, 'SLAM TOOLBOX — MAPPING');
   });
@@ -575,6 +585,37 @@ function initTopics() {
     document.getElementById('odom-hz').textContent = _odomMsgCount + ' Hz';
     _odomMsgCount = 0;
   }, 1000);
+
+  // ── /pose — slam_toolbox map-frame pose (SLAM mode) ──
+  // This is the authoritative position for the canvas renderer.
+  // slam_toolbox corrects odom drift via the map→odom TF; /pose reflects that.
+  var poseSub = new ROSLIB.Topic({
+    ros: ros, name: '/pose',
+    messageType: 'geometry_msgs/PoseWithCovarianceStamped',
+    throttle_rate: 50, queue_length: 1
+  });
+  poseSub.subscribe(function(msg) {
+    _poseSource = 'pose';
+    var p    = msg.pose.pose;
+    var siny = 2*(p.orientation.w*p.orientation.z + p.orientation.x*p.orientation.y);
+    var cosy = 1 - 2*(p.orientation.y*p.orientation.y + p.orientation.z*p.orientation.z);
+    _updateRobotPose(p.position.x, p.position.y, Math.atan2(siny, cosy));
+  });
+
+  // ── /amcl_pose — Nav2 AMCL map-frame pose (navigation mode) ──
+  var amclSub = new ROSLIB.Topic({
+    ros: ros, name: '/amcl_pose',
+    messageType: 'geometry_msgs/PoseWithCovarianceStamped',
+    throttle_rate: 50, queue_length: 1
+  });
+  amclSub.subscribe(function(msg) {
+    _poseSource = 'amcl';
+    var p    = msg.pose.pose;
+    var siny = 2*(p.orientation.w*p.orientation.z + p.orientation.x*p.orientation.y);
+    var cosy = 1 - 2*(p.orientation.y*p.orientation.y + p.orientation.z*p.orientation.z);
+    _updateRobotPose(p.position.x, p.position.y, Math.atan2(siny, cosy));
+    setMapStatus(true, 'NAV2 — AMCL ACTIVE');
+  });
 
   // ── Laser scan ──
   var scanSub = new ROSLIB.Topic({
