@@ -408,6 +408,41 @@
         </div>
       </div>
 
+      <!-- NAV2 NAVIGATION -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Nav2</span>
+          <span class="cam-status-badge" id="nav-status-badge" style="font-size:9px">IDLE</span>
+        </div>
+        <div class="laser-stat-grid">
+          <div class="laser-stat-cell">
+            <div class="laser-stat-label">STATUS</div>
+            <div class="laser-stat-value" id="nav-status-text" style="font-size:12px;color:var(--muted)">IDLE</div>
+          </div>
+          <div class="laser-stat-cell">
+            <div class="laser-stat-label">DIST REMAINING</div>
+            <div class="laser-stat-value" id="nav-dist">--</div>
+          </div>
+          <div class="laser-stat-cell" style="grid-column:1/-1">
+            <div class="laser-stat-label">GOAL</div>
+            <div class="odom-value small" id="nav-goal-coords" style="color:var(--accent2)">--</div>
+          </div>
+        </div>
+        <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border)">
+          <label style="font-family:var(--font-mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="initial-pose-mode" style="accent-color:#a855f7" onchange="onInitialPoseModeChange()">
+            SET INITIAL POSE MODE
+          </label>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-left:20px;line-height:1.4">
+            Click map to set AMCL starting position
+          </div>
+          <button class="btn-sm" id="cancel-nav-btn" onclick="cancelNavGoal()"
+            style="border-color:var(--accent2);color:var(--accent2);margin-top:2px;opacity:0.4;cursor:not-allowed">
+            CANCEL NAVIGATION
+          </button>
+        </div>
+      </div>
+
       <!-- LEGEND -->
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Legend</span></div>
@@ -422,6 +457,8 @@
           <div class="legend-row"><div class="legend-dot" style="background:#00e5ff"></div> Robot (Waffle Pi)</div>
           <div class="legend-row"><div class="legend-dot" style="background:rgba(0,229,255,0.5)"></div> Path trail</div>
           <div class="legend-row"><div class="legend-dot" style="background:#ff6b35"></div> Goal marker</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#00ff88"></div> Nav2 planned path</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#a855f7"></div> Initial pose (AMCL)</div>
           <div class="legend-row" style="color:var(--muted);font-size:9px;margin-top:4px">Drag to pan · Scroll to zoom</div>
         </div>
       </div>
@@ -587,6 +624,9 @@ function initTopics() {
     document.getElementById('ls-map-hz').textContent = _mapMsgCount;
     _mapMsgCount = 0;
   }, 1000);
+
+  // ── Nav2 plan + action client ──
+  initNav2();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -838,6 +878,43 @@ function redrawMapView() {
     ctx.restore();
   }
 
+  // ── Nav2: planned path ──
+  if (_navPlan.length > 1) {
+    ctx.save();
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = 'rgba(0,255,136,0.85)';
+    ctx.lineWidth   = 2.5;
+    ctx.beginPath();
+    var fp = w2c(_navPlan[0].x, _navPlan[0].y);
+    ctx.moveTo(fp.x, fp.y);
+    for (var pi = 1; pi < _navPlan.length; pi++) {
+      var pp = w2c(_navPlan[pi].x, _navPlan[pi].y);
+      ctx.lineTo(pp.x, pp.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+    // Goal endpoint dot
+    var ep = w2c(_navPlan[_navPlan.length-1].x, _navPlan[_navPlan.length-1].y);
+    ctx.beginPath(); ctx.arc(ep.x, ep.y, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#00ff88'; ctx.fill();
+  }
+
+  // ── Nav2: initial pose marker (purple crosshair) ──
+  if (_initialPoseWorld) {
+    var ip = w2c(_initialPoseWorld.x, _initialPoseWorld.y);
+    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ip.x-12, ip.y); ctx.lineTo(ip.x+12, ip.y);
+    ctx.moveTo(ip.x, ip.y-12); ctx.lineTo(ip.x, ip.y+12);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(ip.x, ip.y, 5, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(168,85,247,0.3)'; ctx.fill();
+    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(168,85,247,0.7)';
+    ctx.font = '9px "Share Tech Mono",monospace';
+    ctx.fillText('INIT POSE', ip.x + 9, ip.y - 6);
+  }
+
   // ── C: Waffle Pi robot model ──
   if (document.getElementById('show-robot').checked) {
     var rp = w2c(_robotX, _robotY);
@@ -906,8 +983,14 @@ function redrawMapView() {
   ctx.font = '9px "Share Tech Mono",monospace';
   ctx.fillText('1 m', bx + barPx + 4, by + 5);
 
-  // Goal mode indicator
-  if (document.getElementById('goal-mode').checked) {
+  // Mode indicator
+  var goalMode = document.getElementById('goal-mode').checked;
+  var initMode = document.getElementById('initial-pose-mode').checked;
+  if (initMode) {
+    ctx.fillStyle = 'rgba(168,85,247,0.85)';
+    ctx.font = '10px "Share Tech Mono",monospace';
+    ctx.fillText('● INITIAL POSE MODE — CLICK TO SET', 12, 20);
+  } else if (goalMode) {
     ctx.fillStyle = 'rgba(255,107,53,0.8)';
     ctx.font = '10px "Share Tech Mono",monospace';
     ctx.fillText('● GOAL MODE — CLICK TO SET', 12, 20);
@@ -935,49 +1018,52 @@ function redrawMapView() {
   });
 
   function endDrag(e) {
-    // B: Goal click — only fires if we didn't drag
-    if (!didDrag && document.getElementById('goal-mode').checked && _mapData) {
-      var rect   = canvas.getBoundingClientRect();
-      var cx     = e.clientX - rect.left;
-      var cy     = e.clientY - rect.top;
-      var info   = _mapData.info;
-      var zoom   = parseFloat(document.getElementById('map-zoom').value);
-      var cellPx = info.resolution * zoom * 100;
-      var mToPx  = zoom * 100;
-      var mapW   = info.width, mapH = info.height;
+    if (!didDrag && _mapData) {
+      var rect    = canvas.getBoundingClientRect();
+      var cx      = e.clientX - rect.left;
+      var cy      = e.clientY - rect.top;
+      var info    = _mapData.info;
+      var zoom    = parseFloat(document.getElementById('map-zoom').value);
+      var cellPx  = info.resolution * zoom * 100;
+      var mapW    = info.width, mapH = info.height;
       var originX = canvas.width/2  - (mapW * cellPx)/2 + _mapOffsetX;
       var originY = canvas.height/2 - (mapH * cellPx)/2 + _mapOffsetY;
-      // Canvas → world
       var wx = info.origin.position.x + (cx - originX) / cellPx * info.resolution;
       var wy = info.origin.position.y + (mapH - 1 - (cy - originY) / cellPx) * info.resolution;
-      _goalWorld = { x: wx, y: wy };
-      // Publish goal
-      _ensureGoalTopic();
-      if (_goalPubTopic) {
-        _goalPubTopic.publish(new ROSLIB.Message({
-          header: { frame_id: 'map' },
-          pose: {
-            position:    { x: wx, y: wy, z: 0 },
-            orientation: { x: 0, y: 0, z: 0, w: 1 }
-          }
-        }));
-        showToast('Goal set at (' + wx.toFixed(2) + ', ' + wy.toFixed(2) + ')', false);
+
+      var initMode = document.getElementById('initial-pose-mode').checked;
+      var goalMode = document.getElementById('goal-mode').checked;
+
+      if (initMode) {
+        setInitialPose(wx, wy);
+        // Auto-disable after one click
+        document.getElementById('initial-pose-mode').checked = false;
+        canvas.style.cursor = 'grab';
+      } else if (goalMode) {
+        _goalWorld = { x: wx, y: wy };
+        sendNavGoal(wx, wy);
       }
       redrawMapView();
     }
     _mapDragStart = null;
-    canvas.style.cursor = document.getElementById('goal-mode').checked ? 'crosshair' : 'grab';
+    var initMode = document.getElementById('initial-pose-mode').checked;
+    var goalMode = document.getElementById('goal-mode').checked;
+    canvas.style.cursor = initMode ? 'cell' : goalMode ? 'crosshair' : 'grab';
   }
 
   canvas.addEventListener('mouseup', endDrag);
   canvas.addEventListener('mouseleave', function() {
     _mapDragStart = null;
-    canvas.style.cursor = document.getElementById('goal-mode').checked ? 'crosshair' : 'grab';
+    var initMode = document.getElementById('initial-pose-mode').checked;
+    var goalMode = document.getElementById('goal-mode').checked;
+    canvas.style.cursor = initMode ? 'cell' : goalMode ? 'crosshair' : 'grab';
   });
 
-  // Goal mode changes cursor
+  // Cursor update when modes change
   document.getElementById('goal-mode').addEventListener('change', function() {
-    canvas.style.cursor = this.checked ? 'crosshair' : 'grab';
+    if (this.checked) document.getElementById('initial-pose-mode').checked = false;
+    var initMode = document.getElementById('initial-pose-mode').checked;
+    canvas.style.cursor = this.checked ? 'crosshair' : initMode ? 'cell' : 'grab';
   });
 
   // Scroll to zoom
@@ -1080,6 +1166,196 @@ function showToast(msg, isError) {
   t.className = 'show' + (isError ? ' error' : '');
   if (_toastTimer) clearTimeout(_toastTimer);
   _toastTimer = setTimeout(function() { t.className = ''; }, 3000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV2
+// ─────────────────────────────────────────────────────────────────────────────
+var _navActionClient  = null;
+var _navGoalHandle    = null;
+var _navPlan          = [];    // [{x,y}] world coords from /plan
+var _initialPoseWorld = null;  // {x,y} or null
+var _initialPoseTopic = null;
+
+function initNav2() {
+  if (!ros) return;
+
+  // Action client — navigate_to_pose
+  _navActionClient = new ROSLIB.ActionClient({
+    ros: ros,
+    serverName: '/navigate_to_pose',
+    actionName: 'nav2_msgs/action/NavigateToPose'
+  });
+
+  // Initial pose publisher for AMCL
+  _initialPoseTopic = new ROSLIB.Topic({
+    ros: ros,
+    name: '/initialpose',
+    messageType: 'geometry_msgs/PoseWithCovarianceStamped'
+  });
+
+  // Subscribe to planned path
+  var planSub = new ROSLIB.Topic({
+    ros: ros,
+    name: '/plan',
+    messageType: 'nav_msgs/Path',
+    throttle_rate: 500,
+    queue_length: 1
+  });
+  planSub.subscribe(function(msg) {
+    _navPlan = msg.poses.map(function(p) {
+      return { x: p.pose.position.x, y: p.pose.position.y };
+    });
+    redrawMapView();
+  });
+
+  updateNavStatus('IDLE', null);
+}
+
+function sendNavGoal(wx, wy) {
+  // If Nav2 action server is not available, fall back to /goal_pose topic
+  if (!_navActionClient) {
+    _ensureGoalTopic();
+    if (_goalPubTopic) {
+      _goalPubTopic.publish(new ROSLIB.Message({
+        header: { frame_id: 'map' },
+        pose: { position: { x: wx, y: wy, z: 0 }, orientation: { x: 0, y: 0, z: 0, w: 1 } }
+      }));
+      showToast('Goal sent to /goal_pose (Nav2 not connected)', false);
+    }
+    return;
+  }
+
+  // Cancel any in-flight goal first
+  if (_navGoalHandle) { _navGoalHandle.cancel(); _navGoalHandle = null; }
+
+  var goal = new ROSLIB.Goal({
+    actionClient: _navActionClient,
+    goalMessage: {
+      pose: {
+        header: { frame_id: 'map', stamp: { sec: 0, nanosec: 0 } },
+        pose: {
+          position:    { x: wx, y: wy, z: 0.0 },
+          orientation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 }
+        }
+      }
+    }
+  });
+
+  goal.on('result', function() {
+    _navGoalHandle = null;
+    _navPlan = [];
+    updateNavStatus('SUCCEEDED', 0);
+    setCancelBtn(false);
+    showToast('Navigation succeeded!', false);
+    redrawMapView();
+  });
+
+  goal.on('feedback', function(fb) {
+    var dist = (fb && fb.distance_remaining !== undefined) ? fb.distance_remaining : null;
+    updateNavStatus('NAVIGATING', dist);
+  });
+
+  goal.on('status', function(status) {
+    // 5 = CANCELED, 6 = ABORTED
+    if (status === 5 || status === 6) {
+      updateNavStatus(status === 5 ? 'CANCELLED' : 'ABORTED', null);
+      _navGoalHandle = null; _navPlan = [];
+      setCancelBtn(false);
+      redrawMapView();
+    }
+  });
+
+  _navGoalHandle = goal;
+  goal.send();
+  updateNavStatus('SENDING...', null);
+  setCancelBtn(true);
+  showToast('Nav goal → (' + wx.toFixed(2) + ', ' + wy.toFixed(2) + ')', false);
+  redrawMapView();
+}
+
+function cancelNavGoal() {
+  if (_navGoalHandle) { _navGoalHandle.cancel(); _navGoalHandle = null; }
+  _navPlan = [];
+  updateNavStatus('CANCELLED', null);
+  setCancelBtn(false);
+  redrawMapView();
+}
+
+function setInitialPose(wx, wy) {
+  if (!_initialPoseTopic) return;
+  _initialPoseWorld = { x: wx, y: wy };
+  _initialPoseTopic.publish(new ROSLIB.Message({
+    header: { frame_id: 'map' },
+    pose: {
+      pose: {
+        position:    { x: wx, y: wy, z: 0 },
+        orientation: { x: 0, y: 0, z: 0, w: 1 }
+      },
+      covariance: [
+        0.25,0,0,0,0,0,  0,0.25,0,0,0,0,
+        0,0,0,0,0,0,     0,0,0,0,0,0,
+        0,0,0,0,0,0,     0,0,0,0,0,0.0685
+      ]
+    }
+  }));
+  showToast('Initial pose set at (' + wx.toFixed(2) + ', ' + wy.toFixed(2) + ')', false);
+  redrawMapView();
+}
+
+function updateNavStatus(status, distRemaining) {
+  var badge = document.getElementById('nav-status-badge');
+  var text  = document.getElementById('nav-status-text');
+  var dist  = document.getElementById('nav-dist');
+  var goal  = document.getElementById('nav-goal-coords');
+
+  text.textContent  = status;
+  badge.textContent = status;
+
+  if (status === 'NAVIGATING' || status === 'SENDING...') {
+    badge.className       = 'cam-status-badge live';
+    text.style.color      = 'var(--success)';
+    dist.textContent      = distRemaining !== null && distRemaining !== undefined
+                            ? distRemaining.toFixed(2) : '--';
+    goal.textContent      = _goalWorld
+                            ? '(' + _goalWorld.x.toFixed(2) + ', ' + _goalWorld.y.toFixed(2) + ')'
+                            : '--';
+  } else if (status === 'SUCCEEDED') {
+    badge.className       = 'cam-status-badge live';
+    text.style.color      = 'var(--success)';
+    dist.textContent      = '0.00';
+  } else if (status === 'ABORTED' || status === 'FAILED') {
+    badge.className       = 'cam-status-badge error';
+    text.style.color      = 'var(--accent2)';
+    dist.textContent      = '--';
+  } else {
+    // IDLE, CANCELLED
+    badge.className       = 'cam-status-badge';
+    text.style.color      = 'var(--muted)';
+    dist.textContent      = '--';
+    if (status === 'IDLE') goal.textContent = '--';
+  }
+}
+
+function setCancelBtn(enabled) {
+  var btn = document.getElementById('cancel-nav-btn');
+  btn.disabled         = !enabled;
+  btn.style.opacity    = enabled ? '1'   : '0.4';
+  btn.style.cursor     = enabled ? 'pointer' : 'not-allowed';
+}
+
+function onInitialPoseModeChange() {
+  var canvas   = document.getElementById('laser-canvas');
+  var initMode = document.getElementById('initial-pose-mode').checked;
+  var goalMode = document.getElementById('goal-mode').checked;
+  if (initMode) {
+    // Only one mode active at a time
+    document.getElementById('goal-mode').checked = false;
+    canvas.style.cursor = 'cell';
+  } else {
+    canvas.style.cursor = goalMode ? 'crosshair' : 'grab';
+  }
+  redrawMapView();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
