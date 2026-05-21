@@ -1235,7 +1235,7 @@ function initNav2() {
     messageType: 'geometry_msgs/PoseWithCovarianceStamped'
   });
 
-  // Subscribe to planned path
+  // Subscribe to planned path — also use as proxy for nav status
   var planSub = new ROSLIB.Topic({
     ros: ros,
     name: '/plan',
@@ -1247,6 +1247,10 @@ function initNav2() {
     _navPlan = msg.poses.map(function(p) {
       return { x: p.pose.position.x, y: p.pose.position.y };
     });
+    if (_navPlan.length > 0) {
+      updateNavStatus('NAVIGATING', null);
+      setCancelBtn(true);
+    }
     redrawMapView();
   });
 
@@ -1254,72 +1258,40 @@ function initNav2() {
 }
 
 function sendNavGoal(wx, wy) {
-  // If Nav2 action server is not available, fall back to /goal_pose topic
-  if (!_navActionClient) {
-    _ensureGoalTopic();
-    if (_goalPubTopic) {
-      _goalPubTopic.publish(new ROSLIB.Message({
-        header: { frame_id: 'map' },
-        pose: { position: { x: wx, y: wy, z: 0 }, orientation: { x: 0, y: 0, z: 0, w: 1 } }
-      }));
-      showToast('Goal sent to /goal_pose (Nav2 not connected)', false);
-    }
-    return;
+  _ensureGoalTopic();
+  if (!_goalPubTopic) {
+    showToast('Not connected to ROS', true); return;
   }
-
-  // Cancel any in-flight goal first
+  // Cancel any existing goal first
   if (_navGoalHandle) { _navGoalHandle.cancel(); _navGoalHandle = null; }
 
-  var goal = new ROSLIB.Goal({
-    actionClient: _navActionClient,
-    goalMessage: {
-      pose: {
-        header: { frame_id: 'map', stamp: { sec: 0, nanosec: 0 } },
-        pose: {
-          position:    { x: wx, y: wy, z: 0.0 },
-          orientation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 }
-        }
-      }
+  // Publish directly to /goal_pose — bt_navigator subscribes to this natively.
+  // Avoids ROSLIB action client timeout issues over rosbridge websocket.
+  _goalPubTopic.publish(new ROSLIB.Message({
+    header: { frame_id: 'map', stamp: { sec: 0, nanosec: 0 } },
+    pose: {
+      position:    { x: wx, y: wy, z: 0.0 },
+      orientation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 }
     }
-  });
+  }));
 
-  goal.on('result', function() {
-    _navGoalHandle = null;
-    _navPlan = [];
-    updateNavStatus('SUCCEEDED', 0);
-    setCancelBtn(false);
-    showToast('Navigation succeeded!', false);
-    redrawMapView();
-  });
-
-  goal.on('feedback', function(fb) {
-    var dist = (fb && fb.distance_remaining !== undefined) ? fb.distance_remaining : null;
-    updateNavStatus('NAVIGATING', dist);
-  });
-
-  goal.on('status', function(status) {
-    // 5 = CANCELED, 6 = ABORTED
-    if (status === 5 || status === 6) {
-      updateNavStatus(status === 5 ? 'CANCELLED' : 'ABORTED', null);
-      _navGoalHandle = null; _navPlan = [];
-      setCancelBtn(false);
-      redrawMapView();
-    }
-  });
-
-  _navGoalHandle = goal;
-  goal.send();
-  updateNavStatus('SENDING...', null);
+  updateNavStatus('NAVIGATING', null);
   setCancelBtn(true);
   showToast('Nav goal → (' + wx.toFixed(2) + ', ' + wy.toFixed(2) + ')', false);
   redrawMapView();
 }
 
 function cancelNavGoal() {
-  if (_navGoalHandle) { _navGoalHandle.cancel(); _navGoalHandle = null; }
+  // Stop the robot immediately via cmd_vel
+  if (cmdVelTopic) {
+    cmdVelTopic.publish(new ROSLIB.Message({
+      linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 }
+    }));
+  }
   _navPlan = [];
   updateNavStatus('CANCELLED', null);
   setCancelBtn(false);
+  showToast('Navigation cancelled', false);
   redrawMapView();
 }
 
